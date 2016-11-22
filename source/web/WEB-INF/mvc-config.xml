@@ -1,0 +1,62 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd ">
+
+    <mvc:annotation-driven />
+
+    <context:component-scan base-package="kyro.inventory.web" />
+
+    <mvc:interceptors>
+        <bean class="kyro.inventory.web.UserSessionInterceptor" />
+    </mvc:interceptors>
+
+    <mvc:cors>
+
+        <mvc:mapping path="/api/**"
+                     allowed-origins="http://localhost:3000"
+                     allowed-methods="GET, PUT, POST, DELETE"/>
+
+    </mvc:cors>
+
+    <!--
+    <mvc:resources mapping="/resources/**" location="/WEB-INF/resources/" />
+    <mvc:resources mapping="/html_test/**" location="/html_test/" />
+    <mvc:resources mapping="/pages/**" location="/pages/" />
+    -->
+
+    <!--
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.tiles3.TilesViewResolver"></bean>
+
+    <bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+        <property name="definitions" value="/WEB-INF/layout/tiles.xml"></property>
+        <property name="checkRefresh" value="true"></property>
+    </bean>
+    -->
+
+    <!-- Configure to plugin JSON as request and response in method handler -->
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+        <property name="messageConverters">
+            <list>
+                <ref bean="jsonMessageConverter"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Configure bean to convert JSON to POJO and vice versa -->
+    <bean id="jsonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+        <property name="objectMapper" ref="objectMapper" />
+    </bean>
+
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper">
+        <property name="serializationInclusion" value="NON_NULL" />
+    </bean>
+
+</beans>
