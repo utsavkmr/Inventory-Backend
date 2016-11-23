@@ -2,6 +2,7 @@ package kyro.inventory.model;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.validation.constraints.NotNull;
 
 /**
  * Measurement
@@ -16,6 +17,7 @@ public class Measurement extends ActiveAuditableEntity {
      * Abbreviation
      */
     @Basic
+    @NotNull
     private String abbreviation;
 
     /**

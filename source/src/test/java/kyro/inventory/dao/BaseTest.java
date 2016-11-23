@@ -53,6 +53,15 @@ public abstract class BaseTest {
     @Autowired
     VendorService vendorService;
 
+    @Autowired
+    ProductService productService;
+
+    @Autowired
+    PurchaseService purchaseService;
+
+    @Autowired
+    LocationService locationService;
+
     @Before
     public void before() {
         UserLogin userLogin = new UserLogin();
