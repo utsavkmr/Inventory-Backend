@@ -3,7 +3,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- -----------------------------------------------------
 -- Table `inventory`.`inv_account`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `inventory`.`inv_account` (
+CREATE TABLE IF NOT EXISTS `inv_account` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `productId` BIGINT NOT NULL,
   `locationId` BIGINT NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `inventory`.`inv_account` (
 -- -----------------------------------------------------
 -- Table `inventory`.`inv_balance`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `inventory`.`inv_balance` (
+CREATE TABLE IF NOT EXISTS `inv_balance` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `accountId` BIGINT NOT NULL,
   `balance` DECIMAL(15,2) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `inventory`.`inv_balance` (
 -- -----------------------------------------------------
 -- Table `inventory`.`inv_checkpoint`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `inventory`.`inv_checkpoint` (
+CREATE TABLE IF NOT EXISTS `inv_checkpoint` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `accountId` BIGINT NOT NULL,
   `amount` DECIMAL(15,2) NOT NULL,
@@ -50,6 +50,10 @@ CREATE TABLE IF NOT EXISTS `inventory`.`inv_checkpoint` (
     REFERENCES `inventory`.`inv_account` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
+
+TRUNCATE TABLE inv_balance;
+TRUNCATE TABLE inv_checkpoint;
+TRUNCATE TABLE inv_account;
 
 TRUNCATE TABLE purchase;
 TRUNCATE TABLE order_details;
