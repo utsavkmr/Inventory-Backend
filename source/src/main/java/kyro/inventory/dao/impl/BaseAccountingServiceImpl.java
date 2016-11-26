@@ -6,6 +6,8 @@ import org.hibernate.Session;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jdbc.Work;
 import org.hibernate.service.jdbc.connections.spi.ConnectionProvider;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Query;
 import java.sql.*;
@@ -15,6 +17,7 @@ import java.util.Date;
 /**
  * Created by fahrur on 11/24/2016.
  */
+@Transactional
 public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> extends BaseServiceImpl<T>  {
 
     private static final String QUERY_GET_STOCK_ACCOUNT = "SELECT * FROM inv_account a WHERE a.productId = ? AND a.locationId = ? AND stockBalanceType = ?";
@@ -48,11 +51,13 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
             " balanceAfter = balanceAfter + ?" +
             " WHERE accountId = ? AND id > ?";
 
+    private static final String QUERY_DELETE_STOCK_CHECKPOINT = "DELETE FROM inv_checkpoint WHERE id=?";
+
     protected BaseAccountingServiceImpl(Class<T> entityClass) {
         super(entityClass);
     }
 
-    protected StockAccount getStockAccountId(StockAccount stockAccount) {
+    protected StockAccount getStockAccount(StockAccount stockAccount) {
         Long stockAccountId=null;
 
         Query q = entityManager.createNativeQuery(QUERY_GET_STOCK_ACCOUNT);
@@ -63,7 +68,12 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
 
         List accounts = q.getResultList();
         if (accounts.size() > 0) {
-            stockAccount = (StockAccount) q.getSingleResult();
+            Object[] result = (Object[])q.getSingleResult();
+            Long id = ((Number)result[0]).longValue();
+            Long productId = ((Number)result[1]).longValue();
+            Long locationId = result[2]!=null ? ((Number)result[2]).longValue() : null;
+            StockBalanceType stockBalanceType = StockBalanceType.valueOf((String)result[3]);
+            stockAccount = new StockAccount(id, productId, locationId, stockBalanceType);
         }
 
         return stockAccount;
@@ -71,20 +81,17 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
 
     protected StockAccount createStockAccountId(StockAccount stockAccount) throws SQLException {
 
-        stockAccount = getStockAccountId(stockAccount);
+        Query q = entityManager.createNativeQuery(QUERY_INSERT_STOCK_ACCOUNT);
+        q.setParameter(1, stockAccount.productId);
+        q.setParameter(2, stockAccount.locationId);
+        q.setParameter(3, stockAccount.stockBalanceType.toString());
 
-        if(stockAccount.id==null) {
+        q.executeUpdate();
+        entityManager.flush();
 
-            Query q = entityManager.createNativeQuery(QUERY_INSERT_STOCK_ACCOUNT);
-            q.setParameter(1, stockAccount.productId);
-            q.setParameter(2, stockAccount.locationId);
-            q.setParameter(3, stockAccount.stockBalanceType.toString());
+        Query qId = entityManager.createNativeQuery(QUERY_LAST_INSERT_ID);
+        stockAccount.id = ((Number) qId.getSingleResult()).longValue();
 
-            q.executeUpdate();
-
-            Query qId = entityManager.createNativeQuery(QUERY_LAST_INSERT_ID);
-            stockAccount.id = ((Number) qId.getSingleResult()).longValue();
-        }
         return stockAccount;
     }
 
@@ -99,7 +106,18 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
 
         List accounts = q.getResultList();
         if (accounts.size() > 0) {
-            stockCheckPoint = (StockCheckPoint) q.getSingleResult();
+            Object[] result = (Object[])q.getSingleResult();
+            Long id = ((Number)result[0]).longValue();
+            Long accountId = ((Number)result[1]).longValue();
+            Double amount = ((Number)result[2]).doubleValue();
+            Double balanceAfter = ((Number)result[3]).doubleValue();
+            Long lastTransactionEntityId = ((Number)result[4]).longValue();
+            Long lastTransactionChildId = ((Number)result[5]).longValue();
+            TransactionType lastTransactionType = TransactionType.valueOf((String)result[6]);
+            Date lastTransactionDateTime = new Date(((Timestamp)result[7]).getTime());
+
+            stockCheckPoint = new StockCheckPoint(id,accountId,amount,balanceAfter,lastTransactionEntityId,
+                    lastTransactionChildId,lastTransactionType,lastTransactionDateTime);
         }
 
         return stockCheckPoint;
@@ -156,7 +174,16 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
 
         List accounts = q.getResultList();
         if (accounts.size() > 0) {
-            stockBalance = (StockBalance) q.getSingleResult();
+            Object[] result = (Object[])q.getSingleResult();
+            Long id = ((Number)result[0]).longValue();
+            Long accountId = ((Number)result[1]).longValue();
+            Double balance = ((Number)result[2]).doubleValue();
+            Long lastTransactionEntityId = ((Number)result[3]).longValue();
+            Long lastTransactionChildId = ((Number)result[4]).longValue();
+            TransactionType lastTransactionType = TransactionType.valueOf((String)result[5]);
+            Date lastTransactionDateTime = new Date(((Timestamp)result[6]).getTime());
+
+            stockBalance = new StockBalance(id,accountId,balance,lastTransactionEntityId,lastTransactionChildId,lastTransactionType,lastTransactionDateTime);
         }
 
         return stockBalance;
@@ -216,7 +243,10 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
     ) throws SQLException, ServiceException {
 
         StockAccount stockAccount = new StockAccount(null,productId,locationId,balanceType);
-        stockAccount = createStockAccountId(stockAccount);
+        stockAccount = getStockAccount(stockAccount);
+        if(stockAccount.id==null) {
+            stockAccount = createStockAccountId(stockAccount);
+        }
 
         StockBalance stockBalance = new StockBalance(null, stockAccount.id, 0.00, lastTransactionEntityId,
                 lastTransactionChildId, lastTransactionType, lastTransactionDateTime);
@@ -251,6 +281,53 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
         updateStockBalance(stockBalance);
 
         return stockCheckPoint;
+    }
+
+    public void deleteStockCheckpoint(
+            Long productId,
+            Long locationId,
+            Double amount,
+            StockBalanceType balanceType,
+            Long lastTransactionEntityId,
+            Long lastTransactionChildId,
+            TransactionType lastTransactionType,
+            Date lastTransactionDateTime
+    ) throws SQLException, ServiceException {
+
+        StockAccount stockAccount = new StockAccount(null,productId,locationId,balanceType);
+        stockAccount = getStockAccount(stockAccount);
+        if(stockAccount.id==null) {
+            throw new ServiceException("Stock account not exist");
+        }
+
+        StockBalance stockBalance = new StockBalance(null, stockAccount.id, 0.00, lastTransactionEntityId,
+                lastTransactionChildId, lastTransactionType, lastTransactionDateTime);
+        stockBalance = getStockBalance(stockBalance);
+        if(stockBalance.id==null) {
+            throw new ServiceException("Stock balance not exist");
+        }
+
+        StockCheckPoint stockCheckPoint = new StockCheckPoint(null, stockAccount.id,
+                amount, 0.00, lastTransactionEntityId, lastTransactionChildId,
+                lastTransactionType, lastTransactionDateTime);
+
+        stockCheckPoint = getStockCheckPoint(stockCheckPoint);
+        if(stockCheckPoint.id==null) {
+            throw new ServiceException("Stock checkpoint not exist");
+        }
+
+        double balanceAfter = stockBalance.balance;
+        double diff = -1 * amount;
+
+        Query q = entityManager.createNativeQuery(QUERY_DELETE_STOCK_CHECKPOINT);
+        q.setParameter(1, stockCheckPoint.id);
+        q.executeUpdate();
+
+        updateAllStockCheckPointBalanceAfter(stockCheckPoint,stockAccount,diff);
+
+        balanceAfter += diff;
+        stockBalance.balance = balanceAfter;
+        updateStockBalance(stockBalance);
     }
 
 

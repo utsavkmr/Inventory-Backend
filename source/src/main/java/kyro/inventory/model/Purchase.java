@@ -44,7 +44,7 @@ public class Purchase extends IdentifiableEntity {
     @NotNull
     private Boolean isPaid;
 
-    @OneToMany(cascade={CascadeType.MERGE, CascadeType.PERSIST})
+    @OneToMany(cascade={CascadeType.PERSIST,CascadeType.MERGE})
     @JoinColumn(name="purchaseId", nullable = false)
     private List<OrderDetails> orders;
 

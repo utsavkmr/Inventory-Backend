@@ -15,12 +15,14 @@ import kyro.inventory.ServiceException;
 import kyro.inventory.model.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import static kyro.inventory.dao.impl.ServiceHelper.entityErrorMessageHelper;
 
 /**
  * Created by fahrur on 11/21/2016.
  */
+@Transactional
 public abstract class BaseServiceImpl<T extends IdentifiableEntity> {
 
     /**

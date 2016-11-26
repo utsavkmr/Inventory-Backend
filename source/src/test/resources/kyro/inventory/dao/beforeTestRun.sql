@@ -1,13 +1,17 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE inv_account;
+DROP TABLE inv_balance;
+DROP TABLE inv_checkpoint;
+
 -- -----------------------------------------------------
 -- Table `inventory`.`inv_account`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inv_account` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `productId` BIGINT NOT NULL,
-  `locationId` BIGINT NOT NULL,
-  `stockBalanceType` ENUM('ON_HAND', 'ON_ORDER', 'AVAILABLE', 'IN_TRANSIT') NULL,
+  `locationId` BIGINT NULL,
+  `stockBalanceType` ENUM('ON_HAND', 'ON_ORDER', 'AVAILABLE', 'IN_TRANSIT') NOT NULL,
   PRIMARY KEY (`id`));
 
 
@@ -75,15 +79,21 @@ INSERT INTO product_category SET NAME="test", isActive=TRUE, createdBy="test", c
 INSERT INTO measurement SET NAME="pcs", abbreviation="pcs", isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 INSERT INTO measurement SET NAME="packs", abbreviation="packs", isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 INSERT INTO address SET postalCode="123", remarks="", street="street", cityId=1, countryId=1, provinceId=1;
-INSERT INTO product SET NAME="test", barcode="123", CODE="123", costPrice=10000, purchaseUOMConversion=1,
+INSERT INTO product SET id=1, NAME="test", barcode="123", CODE="123", costPrice=10000, purchaseUOMConversion=1,
 	remarks="", reorderPoint=1, salesPrice=15000, salesStandardPrice=15000, salesUOMConversion=1,
 	TYPE=0, productCategoryId=1, purchaseUOMId=1, salesUOMId=1, standardUOMId=1, isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 INSERT INTO vendor SET NAME="test", email="test@test.com", fax="123", phone="123",remarks="test", website="test",
 	addressId = 1, isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 
-INSERT INTO purchase SET DATE="2015/01/01", dueDate="2015/01/01", freight=100, isFulfilled=FALSE, isPaid=FALSE, NO="123",
+INSERT INTO purchase SET id=1, DATE="2015/01/01", dueDate="2015/01/01", freight=100, isFulfilled=FALSE, isPaid=FALSE, NO="123",
 	noVendor="123", subTotal=100, taxPercent=0, taxTotal=0, locationId=1, vendorId=1;
 
-INSERT INTO order_details SET DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantity=10, subTotal=100, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
+INSERT INTO order_details SET id=1, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantity=10, subTotal=100, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
+INSERT INTO order_details SET id=2, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantity=20, subTotal=200, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
+
+INSERT INTO inv_account SET id=1, productId = 1, locationId = 0, stockBalanceType = "ON_ORDER";
+INSERT INTO inv_balance SET id=1, accountId = 1, balance = 30, lastTransactionEntityId = 1, lastTransactionChildId = 1, lastTransactionType = "ORDER", lastTransactionDateTime = "2015/01/01";
+INSERT INTO inv_checkpoint SET id=1, accountId = 1, amount=10, balanceAfter=10, lastTransactionEntityId=1, lastTransactionChildId=1, lastTransactionType="ORDER", lastTransactionDateTime = "2015/01/01";
+INSERT INTO inv_checkpoint SET id=2, accountId = 1, amount=20, balanceAfter=30, lastTransactionEntityId=1, lastTransactionChildId=2, lastTransactionType="ORDER", lastTransactionDateTime = "2015/01/01";
 
 SET FOREIGN_KEY_CHECKS = 1;
