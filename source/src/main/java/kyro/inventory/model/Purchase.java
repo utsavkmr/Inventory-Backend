@@ -62,6 +62,10 @@ public class Purchase extends IdentifiableEntity {
 
     @Basic
     @NotNull
+    private Double total;
+
+    @Basic
+    @NotNull
     private Double freight;
 
     public Purchase() {}
@@ -160,6 +164,14 @@ public class Purchase extends IdentifiableEntity {
 
     public void setTaxTotal(Double taxTotal) {
         this.taxTotal = taxTotal;
+    }
+
+    public Double getTotal() {
+        return total;
+    }
+
+    public void setTotal(Double total) {
+        this.total = total;
     }
 
     public Double getFreight() {

@@ -37,7 +37,7 @@ public class PurchaseServiceTest extends BaseTest {
         orderDetails.setDate(new Date());
         orderDetails.setProduct(product);
         orderDetails.setUnitPrice(10.0);
-        orderDetails.setQuantity(10.0);
+        orderDetails.setQuantityUOM(10.0);
         orderDetails.setDiscount(0.0);
         orderDetails.setSubTotal(100.0);
         orderDetails.setPurchaseUOMConversion(1.0);
@@ -76,7 +76,7 @@ public class PurchaseServiceTest extends BaseTest {
         orderDetails.setDate(new Date());
         orderDetails.setProduct(product);
         orderDetails.setUnitPrice(10.0);
-        orderDetails.setQuantity(5.0);
+        orderDetails.setQuantityUOM(5.0);
         orderDetails.setDiscount(0.0);
         orderDetails.setSubTotal(100.0);
         orderDetails.setPurchaseUOMConversion(1.0);
@@ -88,7 +88,7 @@ public class PurchaseServiceTest extends BaseTest {
         orderDetailsEdit.setDate(new Date());
         orderDetailsEdit.setProduct(product);
         orderDetailsEdit.setUnitPrice(5.0);
-        orderDetailsEdit.setQuantity(10.0);
+        orderDetailsEdit.setQuantityUOM(10.0);
         orderDetailsEdit.setDiscount(0.0);
         orderDetailsEdit.setSubTotal(50.0);
         orderDetailsEdit.setPurchaseUOMConversion(1.0);

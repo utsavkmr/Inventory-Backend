@@ -23,6 +23,10 @@ public class OrderDetails extends IdentifiableEntity {
 
     @Basic
     @NotNull
+    private Double quantityUOM;
+
+    @Basic
+    @NotNull
     private Double quantity;
 
     @Basic
@@ -65,6 +69,14 @@ public class OrderDetails extends IdentifiableEntity {
 
     public void setProduct(Product product) {
         this.product = product;
+    }
+
+    public Double getQuantityUOM() {
+        return quantityUOM;
+    }
+
+    public void setQuantityUOM(Double quantityUOM) {
+        this.quantityUOM = quantityUOM;
     }
 
     public Double getQuantity() {

@@ -86,10 +86,10 @@ INSERT INTO vendor SET NAME="test", email="test@test.com", fax="123", phone="123
 	addressId = 1, isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 
 INSERT INTO purchase SET id=1, DATE="2015/01/01", dueDate="2015/01/01", freight=100, isFulfilled=FALSE, isPaid=FALSE, NO="123",
-	noVendor="123", subTotal=100, taxPercent=0, taxTotal=0, locationId=1, vendorId=1;
+	noVendor="123", subTotal=100, taxPercent=0, taxTotal=0, total=0, locationId=1, vendorId=1;
 
-INSERT INTO order_details SET id=1, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantity=10, subTotal=100, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
-INSERT INTO order_details SET id=2, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantity=20, subTotal=200, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
+INSERT INTO order_details SET id=1, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantityUOM = 10, quantity=10, subTotal=100, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
+INSERT INTO order_details SET id=2, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantityUOM = 20, quantity=20, subTotal=200, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
 
 INSERT INTO inv_account SET id=1, productId = 1, locationId = 0, stockBalanceType = "ON_ORDER";
 INSERT INTO inv_balance SET id=1, accountId = 1, balance = 30, lastTransactionEntityId = 1, lastTransactionChildId = 1, lastTransactionType = "ORDER", lastTransactionDateTime = "2015/01/01";

@@ -43,8 +43,9 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
      * @throws DatabasePersistenceException the exception
      */
     public Purchase create(Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        calculateQtyAndTotal(purchase);
         entityManager.persist(purchase);
-        qtyBalanceOnCreate(purchase);
+        //qtyBalanceOnCreate(purchase);
         return purchase;
     }
 
@@ -57,10 +58,11 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
      */
     @Transactional(propagation = Propagation.REQUIRED)
     public Purchase update(Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        calculateQtyAndTotal(purchase);
         updatePurchase(purchase);
         Purchase updated = entityManager.find(Purchase.class,purchase.getId());
 
-        qtyBalanceOnUpdate(purchase,updated);
+        //qtyBalanceOnUpdate(purchase,updated);
 
         return purchase;
     }
@@ -102,6 +104,37 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             }
         }
 
+    }
+
+    public void calculateQtyAndTotal(Purchase purchase) {
+
+        Double subTotals = 0.0;
+
+        if(purchase.getOrders()!=null) {
+            for (OrderDetails orderDetails : purchase.getOrders()) {
+                Double unitPrice = orderDetails.getUnitPrice();
+                Double discount = orderDetails.getDiscount();
+                Double qty = orderDetails.getQuantityUOM() * orderDetails.getPurchaseUOMConversion();
+                Double price = (qty * unitPrice);
+                Double discountTotal = price * (discount/100.0);
+                Double subTotal = price + discountTotal;
+
+                subTotals += subTotal;
+
+                orderDetails.setQuantity(qty);
+                orderDetails.setSubTotal(subTotal);
+            }
+        }
+
+        Double taxPercent = purchase.getTaxPercent();
+        Double taxTotal = subTotals * (taxPercent/100.0);
+        Double freight = purchase.getFreight();
+
+        Double total = subTotals + taxTotal + freight;
+
+        purchase.setSubTotal(subTotals);
+        purchase.setTaxTotal(taxTotal);
+        purchase.setTotal(total);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
