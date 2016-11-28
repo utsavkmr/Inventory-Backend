@@ -45,7 +45,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
     public Purchase create(Purchase purchase) throws ServiceException, DatabasePersistenceException {
         calculateQtyAndTotal(purchase);
         entityManager.persist(purchase);
-        //qtyBalanceOnCreate(purchase);
+        qtyBalanceOnCreate(purchase);
         return purchase;
     }
 
@@ -59,10 +59,13 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
     @Transactional(propagation = Propagation.REQUIRED)
     public Purchase update(Purchase purchase) throws ServiceException, DatabasePersistenceException {
         calculateQtyAndTotal(purchase);
+        Purchase existingPurchase = entityManager.find(Purchase.class,purchase.getId());
+        CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>( existingPurchase.getOrders() );
+
         updatePurchase(purchase);
         Purchase updated = entityManager.find(Purchase.class,purchase.getId());
 
-        //qtyBalanceOnUpdate(purchase,updated);
+        qtyBalanceOnUpdate(purchase,updated,existingOrderDetails);
 
         return purchase;
     }
@@ -144,19 +147,24 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void qtyBalanceOnUpdate(Purchase purchase, Purchase updated) throws ServiceException, DatabasePersistenceException {
+    public void qtyBalanceOnUpdate(Purchase purchase, Purchase updated, List<OrderDetails> existingOrderDetails) throws ServiceException, DatabasePersistenceException {
 
-        CopyOnWriteArrayList<OrderDetails> updatedOrders = new CopyOnWriteArrayList<OrderDetails>( updated.getOrders() );
+        if(existingOrderDetails!=null && existingOrderDetails.size()>0) {
 
-        if(updatedOrders!=null && updatedOrders.size()>0) {
+            for(OrderDetails orderDetailsUpdated : existingOrderDetails) {
+                Boolean isExist = false;
 
-            for(OrderDetails orderDetailsUpdated : updatedOrders) {
                 for(OrderDetails orderDetails : purchase.getOrders()) {
                     if(orderDetailsUpdated.getId()==orderDetails.getId()) {
-                        qtyBalanceOnDelete(purchase, orderDetailsUpdated);
-                        updated.getOrders().remove(orderDetailsUpdated);
-                        entityManager.remove(orderDetailsUpdated);
+                        isExist = true;
+                        break;
                     }
+                }
+
+                if(!isExist) {
+                    updated.getOrders().remove(orderDetailsUpdated);
+                    qtyBalanceOnDelete(purchase, orderDetailsUpdated);
+                    entityManager.remove(orderDetailsUpdated);
                 }
             }
 

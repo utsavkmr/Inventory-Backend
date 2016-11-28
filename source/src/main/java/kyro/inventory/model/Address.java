@@ -10,7 +10,8 @@ import java.util.Set;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "address")
+@Entity(name="Address")
+@Table(name="address")
 public class Address extends IdentifiableEntity {
 
     /**

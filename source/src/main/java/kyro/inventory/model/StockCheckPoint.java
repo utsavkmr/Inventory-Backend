@@ -1,34 +1,44 @@
 package kyro.inventory.model;
 
+import javax.persistence.*;
 import java.util.Date;
 
 /**
  * Created by fahrur on 11/24/2016.
  */
-public class StockCheckPoint {
+@Entity(name = "StockCheckpoint")
+@Table(name="stock_checkpoint")
+public class StockCheckPoint extends IdentifiableEntity {
 
-    public Long id;
+    @Basic
+    private Long accountId;
 
-    public Long accountId;
+    @Basic
+    private Double amount;
 
-    public Double amount;
+    @Basic
+    private Double balanceAfter;
 
-    public Double balanceAfter;
+    @Basic
+    private Long lastTransactionEntityId;
 
-    public Long lastTransactionEntityId;
+    @Basic
+    private Long lastTransactionChildId;
 
-    public Long lastTransactionChildId;
+    @Enumerated(EnumType.STRING)
+    private TransactionType lastTransactionType;
 
-    public TransactionType lastTransactionType;
+    @Basic
+    private Date lastTransactionDateTime;
 
-    public Date lastTransactionDateTime;
+    public StockCheckPoint() {}
 
     public StockCheckPoint(
             Long id, Long accountId, Double amount, Double balanceAfter,
             Long lastTransactionEntityId, Long lastTransactionChildId, TransactionType lastTransactionType,
             Date lastTransactionDateTime
     ) {
-        this.id = id;
+        this.setId(id);
         this.accountId = accountId;
         this.amount = amount;
         this.balanceAfter = balanceAfter;
@@ -38,5 +48,59 @@ public class StockCheckPoint {
         this.lastTransactionDateTime = lastTransactionDateTime;
     }
 
+    public Long getAccountId() {
+        return accountId;
+    }
 
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
+    }
+
+    public Double getBalanceAfter() {
+        return balanceAfter;
+    }
+
+    public void setBalanceAfter(Double balanceAfter) {
+        this.balanceAfter = balanceAfter;
+    }
+
+    public Long getLastTransactionEntityId() {
+        return lastTransactionEntityId;
+    }
+
+    public void setLastTransactionEntityId(Long lastTransactionEntityId) {
+        this.lastTransactionEntityId = lastTransactionEntityId;
+    }
+
+    public Long getLastTransactionChildId() {
+        return lastTransactionChildId;
+    }
+
+    public void setLastTransactionChildId(Long lastTransactionChildId) {
+        this.lastTransactionChildId = lastTransactionChildId;
+    }
+
+    public TransactionType getLastTransactionType() {
+        return lastTransactionType;
+    }
+
+    public void setLastTransactionType(TransactionType lastTransactionType) {
+        this.lastTransactionType = lastTransactionType;
+    }
+
+    public Date getLastTransactionDateTime() {
+        return lastTransactionDateTime;
+    }
+
+    public void setLastTransactionDateTime(Date lastTransactionDateTime) {
+        this.lastTransactionDateTime = lastTransactionDateTime;
+    }
 }

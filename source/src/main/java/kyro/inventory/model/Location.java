@@ -1,6 +1,7 @@
 package kyro.inventory.model;
 
 import javax.persistence.Entity;
+import javax.persistence.Table;
 
 /**
  * Location
@@ -8,7 +9,8 @@ import javax.persistence.Entity;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "location")
+@Entity(name="Location")
+@Table(name="location")
 public class Location extends ActiveAuditableEntity {
 
     /**

@@ -9,7 +9,8 @@ import javax.validation.constraints.NotNull;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "product")
+@Entity(name="Product")
+@Table(name="product")
 public class Product extends ActiveAuditableEntity {
 
     /**

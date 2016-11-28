@@ -8,7 +8,8 @@ import javax.persistence.*;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "province")
+@Entity(name="Province")
+@Table(name="province")
 public class Province extends ActiveAuditableEntity {
 
     /**

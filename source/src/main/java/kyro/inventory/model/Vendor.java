@@ -5,6 +5,7 @@ import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
 import javax.persistence.Entity;
+import javax.persistence.Table;
 
 /**
  * Vendor
@@ -12,7 +13,8 @@ import javax.persistence.Entity;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "vendor")
+@Entity(name = "Vendor")
+@Table(name="vendor")
 public class Vendor extends ActiveAuditableEntity {
 
     /**

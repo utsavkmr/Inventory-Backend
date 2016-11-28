@@ -2,6 +2,7 @@ package kyro.inventory.model;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -10,7 +11,8 @@ import javax.validation.constraints.NotNull;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "measurement")
+@Entity(name="Measurement")
+@Table(name="measurement")
 public class Measurement extends ActiveAuditableEntity {
 
     /**

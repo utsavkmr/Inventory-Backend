@@ -1,32 +1,41 @@
 package kyro.inventory.model;
 
+import javax.persistence.*;
 import java.util.Date;
 
 /**
  * Created by fahrur on 11/24/2016.
  */
-public class StockBalance {
+@Entity(name="StockBalance")
+@Table(name="stock_balance")
+public class StockBalance extends IdentifiableEntity {
 
-    public Long id;
+    @Basic
+    private Long accountId;
 
-    public Long accountId;
+    @Basic
+    private Double balance;
 
-    public Double balance;
+    @Basic
+    private Long lastTransactionEntityId;
 
-    public Long lastTransactionEntityId;
+    @Basic
+    private Long lastTransactionChildId;
 
-    public Long lastTransactionChildId;
+    @Enumerated(EnumType.STRING)
+    private TransactionType lastTransactionType;
 
-    public TransactionType lastTransactionType;
+    @Basic
+    private Date lastTransactionDateTime;
 
-    public Date lastTransactionDateTime;
+    public StockBalance() {}
 
     public StockBalance(
             Long id, Long accountId, Double balance,
             Long lastTransactionEntityId, Long lastTransactionChildId, TransactionType lastTransactionType,
             Date lastTransactionDateTime
     ) {
-        this.id = id;
+        this.setId(id);
         this.accountId = accountId;
         this.balance = balance;
         this.lastTransactionChildId = lastTransactionChildId;
@@ -35,5 +44,51 @@ public class StockBalance {
         this.lastTransactionDateTime = lastTransactionDateTime;
     }
 
+    public Long getAccountId() {
+        return accountId;
+    }
 
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public Double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Double balance) {
+        this.balance = balance;
+    }
+
+    public Long getLastTransactionEntityId() {
+        return lastTransactionEntityId;
+    }
+
+    public void setLastTransactionEntityId(Long lastTransactionEntityId) {
+        this.lastTransactionEntityId = lastTransactionEntityId;
+    }
+
+    public Long getLastTransactionChildId() {
+        return lastTransactionChildId;
+    }
+
+    public void setLastTransactionChildId(Long lastTransactionChildId) {
+        this.lastTransactionChildId = lastTransactionChildId;
+    }
+
+    public TransactionType getLastTransactionType() {
+        return lastTransactionType;
+    }
+
+    public void setLastTransactionType(TransactionType lastTransactionType) {
+        this.lastTransactionType = lastTransactionType;
+    }
+
+    public Date getLastTransactionDateTime() {
+        return lastTransactionDateTime;
+    }
+
+    public void setLastTransactionDateTime(Date lastTransactionDateTime) {
+        this.lastTransactionDateTime = lastTransactionDateTime;
+    }
 }

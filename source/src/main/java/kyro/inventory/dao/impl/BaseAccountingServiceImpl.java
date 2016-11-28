@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.sql.*;
 import java.util.List;
 import java.util.Date;
@@ -20,214 +21,116 @@ import java.util.Date;
 @Transactional
 public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> extends BaseServiceImpl<T>  {
 
-    private static final String QUERY_GET_STOCK_ACCOUNT = "SELECT * FROM inv_account a WHERE a.productId = ? AND a.locationId = ? AND stockBalanceType = ?";
+    private static final String QUERY_GET_STOCK_ACCOUNT = "SELECT a FROM StockAccount a WHERE a.productId = ?1 AND a.locationId = ?2 AND a.stockBalanceType = ?3";
 
-    private static final String QUERY_INSERT_STOCK_ACCOUNT  = "INSERT INTO inv_account SET productId = ?, locationId = ?, stockBalanceType = ?;";
+    private static final String QUERY_GET_STOCK_BALANCE = "SELECT b FROM StockBalance b WHERE b.accountId = ?1";
 
-    private static final String QUERY_LAST_INSERT_ID = "SELECT LAST_INSERT_ID();";
+    private static final String QUERY_GET_STOCK_CHECKPOINT = "SELECT c FROM StockCheckpoint c WHERE c.accountId = ?1 AND c.lastTransactionEntityId=?2" +
+            " AND c.lastTransactionChildId=?3 AND c.lastTransactionType=?4";
 
-    private static final String QUERY_GET_STOCK_BALANCE =
-            "SELECT * FROM inv_balance b WHERE b.accountId = ?";
-
-    private static final String QUERY_INSERT_STOCK_BALANCE  = "INSERT INTO inv_balance SET accountId = ?, balance = ?, lastTransactionEntityId = ?," +
-            " lastTransactionChildId = ?, lastTransactionType = ?, lastTransactionDateTime = ?;";
-
-    private static final String QUERY_UPDATE_STOCK_BALANCE  = "UPDATE inv_balance SET balance = ?, lastTransactionEntityId = ?," +
-            " lastTransactionChildId = ?, lastTransactionType = ?, lastTransactionDateTime = ?" +
-            " WHERE id=?;";
-
-    private static final String QUERY_GET_STOCK_CHECKPOINT = "SELECT * FROM inv_checkpoint c WHERE c.accountId = ? AND c.lastTransactionEntityId=?" +
-            " AND c.lastTransactionChildId=? AND c.lastTransactionType=?";
-
-    private static final String QUERY_INSERT_STOCK_CHECKPOINT = "INSERT INTO inv_checkpoint SET accountId = ?" +
-            ", amount=?, balanceAfter=?"+
-            ", lastTransactionEntityId=?, lastTransactionChildId=?, lastTransactionType=?, lastTransactionDateTime=?";
-
-    private static final String QUERY_UPDATE_STOCK_CHECKPOINT = "UPDATE inv_checkpoint SET" +
-            " amount=?, balanceAfter=?, lastTransactionDateTime=?" +
-            " WHERE id=?";
-
-    private static final String QUERY_UPDATE_ALL_STOCK_CHECKPOINT_BALANCE_AFTER = "UPDATE inv_checkpoint SET" +
-            " balanceAfter = balanceAfter + ?" +
-            " WHERE accountId = ? AND id > ?";
-
-    private static final String QUERY_DELETE_STOCK_CHECKPOINT = "DELETE FROM inv_checkpoint WHERE id=?";
+    private static final String QUERY_UPDATE_ALL_STOCK_CHECKPOINT_BALANCE_AFTER = "UPDATE StockCheckpoint c SET" +
+            " c.balanceAfter = ( c.balanceAfter + ? )" +
+            " WHERE c.accountId = ? AND c.id > ?";
 
     protected BaseAccountingServiceImpl(Class<T> entityClass) {
         super(entityClass);
     }
 
     protected StockAccount getStockAccount(StockAccount stockAccount) {
-        Long stockAccountId=null;
+        StockAccount ret = null;
 
-        Query q = entityManager.createNativeQuery(QUERY_GET_STOCK_ACCOUNT);
+        // Create query
+        TypedQuery<StockAccount> q = getEntityManager().createQuery(QUERY_GET_STOCK_ACCOUNT, StockAccount.class);
 
-        q.setParameter(1, stockAccount.productId);
-        q.setParameter(2, stockAccount.locationId);
-        q.setParameter(3, stockAccount.stockBalanceType.toString());
+        q.setParameter(1, stockAccount.getProductId());
+        q.setParameter(2, stockAccount.getLocationId());
+        q.setParameter(3, stockAccount.stockBalanceType);
 
-        List accounts = q.getResultList();
+        // Execute the query
+        List<StockAccount> accounts = q.getResultList();
         if (accounts.size() > 0) {
-            Object[] result = (Object[])q.getSingleResult();
-            Long id = ((Number)result[0]).longValue();
-            Long productId = ((Number)result[1]).longValue();
-            Long locationId = result[2]!=null ? ((Number)result[2]).longValue() : null;
-            StockBalanceType stockBalanceType = StockBalanceType.valueOf((String)result[3]);
-            stockAccount = new StockAccount(id, productId, locationId, stockBalanceType);
+            ret = q.getSingleResult();
+        }
+        else {
+            return null;
         }
 
-        return stockAccount;
+        return ret;
     }
 
-    protected StockAccount createStockAccountId(StockAccount stockAccount) throws SQLException {
-
-        Query q = entityManager.createNativeQuery(QUERY_INSERT_STOCK_ACCOUNT);
-        q.setParameter(1, stockAccount.productId);
-        q.setParameter(2, stockAccount.locationId);
-        q.setParameter(3, stockAccount.stockBalanceType.toString());
-
-        q.executeUpdate();
-        entityManager.flush();
-
-        Query qId = entityManager.createNativeQuery(QUERY_LAST_INSERT_ID);
-        stockAccount.id = ((Number) qId.getSingleResult()).longValue();
-
+    protected StockAccount createStockAccount(StockAccount stockAccount) throws SQLException {
+        entityManager.persist(stockAccount);
         return stockAccount;
     }
 
     protected StockCheckPoint getStockCheckPoint(StockCheckPoint stockCheckPoint) {
 
-        Query q = entityManager.createNativeQuery(QUERY_GET_STOCK_CHECKPOINT);
+        StockCheckPoint ret = null;
 
-        q.setParameter(1, stockCheckPoint.accountId);
-        q.setParameter(2, stockCheckPoint.lastTransactionEntityId);
-        q.setParameter(3, stockCheckPoint.lastTransactionChildId);
-        q.setParameter(4, stockCheckPoint.lastTransactionType.toString());
+        TypedQuery<StockCheckPoint> q = getEntityManager().createQuery(QUERY_GET_STOCK_CHECKPOINT, StockCheckPoint.class);
 
-        List accounts = q.getResultList();
-        if (accounts.size() > 0) {
-            Object[] result = (Object[])q.getSingleResult();
-            Long id = ((Number)result[0]).longValue();
-            Long accountId = ((Number)result[1]).longValue();
-            Double amount = ((Number)result[2]).doubleValue();
-            Double balanceAfter = ((Number)result[3]).doubleValue();
-            Long lastTransactionEntityId = ((Number)result[4]).longValue();
-            Long lastTransactionChildId = ((Number)result[5]).longValue();
-            TransactionType lastTransactionType = TransactionType.valueOf((String)result[6]);
-            Date lastTransactionDateTime = new Date(((Timestamp)result[7]).getTime());
+        q.setParameter(1, stockCheckPoint.getAccountId());
+        q.setParameter(2, stockCheckPoint.getLastTransactionEntityId());
+        q.setParameter(3, stockCheckPoint.getLastTransactionChildId());
+        q.setParameter(4, stockCheckPoint.getLastTransactionType());
 
-            stockCheckPoint = new StockCheckPoint(id,accountId,amount,balanceAfter,lastTransactionEntityId,
-                    lastTransactionChildId,lastTransactionType,lastTransactionDateTime);
+        List<StockCheckPoint> stockCheckPoints = q.getResultList();
+        if (stockCheckPoints.size() > 0) {
+            ret = q.getSingleResult();
+        }
+        else {
+            return null;
         }
 
-        return stockCheckPoint;
+        return ret;
     }
 
     protected StockCheckPoint createStockCheckPoint(StockCheckPoint stockCheckPoint) {
-
-        Query q = entityManager.createNativeQuery(QUERY_INSERT_STOCK_CHECKPOINT);
-        q.setParameter(1, stockCheckPoint.accountId);
-        q.setParameter(2, stockCheckPoint.amount);
-        q.setParameter(3, stockCheckPoint.balanceAfter);
-        q.setParameter(4, stockCheckPoint.lastTransactionEntityId);
-        q.setParameter(5, stockCheckPoint.lastTransactionChildId);
-        q.setParameter(6, stockCheckPoint.lastTransactionType.toString());
-        q.setParameter(7, stockCheckPoint.lastTransactionDateTime);
-
-        q.executeUpdate();
-
-        Query qId = entityManager.createNativeQuery(QUERY_LAST_INSERT_ID);
-        stockCheckPoint.id = ((Number) qId.getSingleResult()).longValue();
-
-
+        entityManager.persist(stockCheckPoint);
         return stockCheckPoint;
     }
 
     protected StockCheckPoint updateStockCheckPoint(StockCheckPoint stockCheckPoint) {
-
-        Query q = entityManager.createNativeQuery(QUERY_UPDATE_STOCK_CHECKPOINT);
-        q.setParameter(1, stockCheckPoint.amount);
-        q.setParameter(2, stockCheckPoint.balanceAfter);
-        q.setParameter(3, stockCheckPoint.lastTransactionDateTime);
-        q.setParameter(4, stockCheckPoint.id);
-
-        q.executeUpdate();
-
+        entityManager.merge(stockCheckPoint);
         return stockCheckPoint;
     }
 
     protected void updateAllStockCheckPointBalanceAfter(StockCheckPoint stockCheckPoint, StockAccount stockAccount, double diff) {
 
-        Query q = entityManager.createNativeQuery(QUERY_UPDATE_ALL_STOCK_CHECKPOINT_BALANCE_AFTER);
+        Query q = getEntityManager().createQuery(QUERY_UPDATE_ALL_STOCK_CHECKPOINT_BALANCE_AFTER);
+
         q.setParameter(1, diff);
-        q.setParameter(2, stockAccount.id);
-        q.setParameter(3, stockCheckPoint.id);
+        q.setParameter(2, stockAccount.getId());
+        q.setParameter(3, stockCheckPoint.getId());
 
         q.executeUpdate();
     }
 
     protected StockBalance getStockBalance(StockBalance stockBalance) {
+        StockBalance ret = null;
 
-        Query q = entityManager.createNativeQuery(QUERY_GET_STOCK_BALANCE);
+        TypedQuery<StockBalance> q = getEntityManager().createQuery(QUERY_GET_STOCK_BALANCE, StockBalance.class);
 
-        q.setParameter(1, stockBalance.accountId);
+        q.setParameter(1, stockBalance.getAccountId());
 
-        List accounts = q.getResultList();
-        if (accounts.size() > 0) {
-            Object[] result = (Object[])q.getSingleResult();
-            Long id = ((Number)result[0]).longValue();
-            Long accountId = ((Number)result[1]).longValue();
-            Double balance = ((Number)result[2]).doubleValue();
-            Long lastTransactionEntityId = ((Number)result[3]).longValue();
-            Long lastTransactionChildId = ((Number)result[4]).longValue();
-            TransactionType lastTransactionType = TransactionType.valueOf((String)result[5]);
-            Date lastTransactionDateTime = new Date(((Timestamp)result[6]).getTime());
-
-            stockBalance = new StockBalance(id,accountId,balance,lastTransactionEntityId,lastTransactionChildId,lastTransactionType,lastTransactionDateTime);
+        List<StockBalance> balances = q.getResultList();
+        if (balances.size() > 0) {
+            ret = q.getSingleResult();
+        }
+        else {
+            return null;
         }
 
-        return stockBalance;
+        return ret;
     }
 
     protected StockBalance createStockBalance(StockBalance stockBalance) {
-
-        stockBalance = getStockBalance(stockBalance);
-
-        if(stockBalance.id==null) {
-            Query q = entityManager.createNativeQuery(QUERY_INSERT_STOCK_BALANCE);
-            q.setParameter(1, stockBalance.accountId);
-            q.setParameter(2, 0.00);
-            q.setParameter(3, stockBalance.lastTransactionEntityId);
-            q.setParameter(4, stockBalance.lastTransactionChildId);
-            q.setParameter(5, stockBalance.lastTransactionType.toString());
-            q.setParameter(6, stockBalance.lastTransactionDateTime);
-
-            q.executeUpdate();
-
-            Query qId = entityManager.createNativeQuery(QUERY_LAST_INSERT_ID);
-            stockBalance.id = ((Number) qId.getSingleResult()).longValue();
-        }
-
+        entityManager.persist(stockBalance);
         return stockBalance;
     }
 
     protected StockBalance updateStockBalance(StockBalance stockBalance) throws ServiceException {
-
-        if(stockBalance.id!=null) {
-            Query q = entityManager.createNativeQuery(QUERY_UPDATE_STOCK_BALANCE);
-            q.setParameter(1, stockBalance.balance);
-            q.setParameter(2, stockBalance.lastTransactionEntityId);
-            q.setParameter(3, stockBalance.lastTransactionChildId);
-            q.setParameter(4, stockBalance.lastTransactionType.toString());
-            q.setParameter(5, stockBalance.lastTransactionDateTime);
-            q.setParameter(6, stockBalance.id);
-
-            q.executeUpdate();
-        }
-        else {
-            throw new ServiceException("Stock balance "+stockBalance.id+" are not exist!");
-        }
-
+        entityManager.merge(stockBalance);
         return stockBalance;
     }
 
@@ -243,41 +146,41 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
     ) throws SQLException, ServiceException {
 
         StockAccount stockAccount = new StockAccount(null,productId,locationId,balanceType);
-        stockAccount = getStockAccount(stockAccount);
-        if(stockAccount.id==null) {
-            stockAccount = createStockAccountId(stockAccount);
-        }
+        StockAccount existedStockAccount = getStockAccount(stockAccount);
+        stockAccount = existedStockAccount != null ? existedStockAccount : createStockAccount(stockAccount);
 
-        StockBalance stockBalance = new StockBalance(null, stockAccount.id, 0.00, lastTransactionEntityId,
+        StockBalance stockBalance = new StockBalance(null, stockAccount.getId(), 0.00, lastTransactionEntityId,
                 lastTransactionChildId, lastTransactionType, lastTransactionDateTime);
-        stockBalance = createStockBalance(stockBalance);
+        StockBalance existedStockBalance = getStockBalance(stockBalance);
+        stockBalance = existedStockBalance != null ? existedStockBalance : createStockBalance(stockBalance);
 
-        StockCheckPoint stockCheckPoint = new StockCheckPoint(null, stockAccount.id,
+        StockCheckPoint stockCheckPoint = new StockCheckPoint(null, stockAccount.getId(),
                 amount, 0.00, lastTransactionEntityId, lastTransactionChildId,
                 lastTransactionType, lastTransactionDateTime);
 
-        stockCheckPoint = getStockCheckPoint(stockCheckPoint);
+        StockCheckPoint existedStockCheckPoint = getStockCheckPoint(stockCheckPoint);
 
-        double balanceAfter = stockBalance.balance;
+        double balanceAfter = stockBalance.getBalance();
         double diff = 0.00;
 
         //Create stock checkpoint
-        if(stockCheckPoint.id==null) {
+        if(existedStockCheckPoint==null) {
             diff = amount;
-            stockCheckPoint.balanceAfter = stockBalance.balance + diff;
+            stockCheckPoint.setBalanceAfter( stockBalance.getBalance() + diff );
             stockCheckPoint = createStockCheckPoint(stockCheckPoint);
         }
         //Update stock checkpoint
         else {
-            diff = amount - stockCheckPoint.amount;
-            stockCheckPoint.balanceAfter = stockCheckPoint.balanceAfter + diff;
-            stockCheckPoint = updateStockCheckPoint(stockCheckPoint);
+            diff = amount - existedStockCheckPoint.getAmount();
+            existedStockCheckPoint.setAmount(amount);
+            existedStockCheckPoint.setBalanceAfter( existedStockCheckPoint.getBalanceAfter() + diff );
+            stockCheckPoint = updateStockCheckPoint(existedStockCheckPoint);
         }
 
         updateAllStockCheckPointBalanceAfter(stockCheckPoint,stockAccount,diff);
 
         balanceAfter += diff;
-        stockBalance.balance = balanceAfter;
+        stockBalance.setBalance(balanceAfter);
         updateStockBalance(stockBalance);
 
         return stockCheckPoint;
@@ -296,37 +199,35 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
 
         StockAccount stockAccount = new StockAccount(null,productId,locationId,balanceType);
         stockAccount = getStockAccount(stockAccount);
-        if(stockAccount.id==null) {
+        if(stockAccount==null) {
             throw new ServiceException("Stock account not exist");
         }
 
-        StockBalance stockBalance = new StockBalance(null, stockAccount.id, 0.00, lastTransactionEntityId,
+        StockBalance stockBalance = new StockBalance(null, stockAccount.getId(), 0.00, lastTransactionEntityId,
                 lastTransactionChildId, lastTransactionType, lastTransactionDateTime);
         stockBalance = getStockBalance(stockBalance);
-        if(stockBalance.id==null) {
+        if(stockBalance==null) {
             throw new ServiceException("Stock balance not exist");
         }
 
-        StockCheckPoint stockCheckPoint = new StockCheckPoint(null, stockAccount.id,
+        StockCheckPoint stockCheckpoint = new StockCheckPoint(null, stockAccount.getId(),
                 amount, 0.00, lastTransactionEntityId, lastTransactionChildId,
                 lastTransactionType, lastTransactionDateTime);
 
-        stockCheckPoint = getStockCheckPoint(stockCheckPoint);
-        if(stockCheckPoint.id==null) {
+        StockCheckPoint existedStockCheckpoint = getStockCheckPoint(stockCheckpoint);
+        if(existedStockCheckpoint==null) {
             throw new ServiceException("Stock checkpoint not exist");
         }
 
-        double balanceAfter = stockBalance.balance;
+        double balanceAfter = stockBalance.getBalance();
         double diff = -1 * amount;
 
-        Query q = entityManager.createNativeQuery(QUERY_DELETE_STOCK_CHECKPOINT);
-        q.setParameter(1, stockCheckPoint.id);
-        q.executeUpdate();
+        updateAllStockCheckPointBalanceAfter(existedStockCheckpoint,stockAccount,diff);
 
-        updateAllStockCheckPointBalanceAfter(stockCheckPoint,stockAccount,diff);
+        entityManager.remove(existedStockCheckpoint);
 
         balanceAfter += diff;
-        stockBalance.balance = balanceAfter;
+        stockBalance.setBalance(balanceAfter);
         updateStockBalance(stockBalance);
     }
 

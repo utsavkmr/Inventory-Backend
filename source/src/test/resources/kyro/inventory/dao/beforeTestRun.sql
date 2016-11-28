@@ -1,63 +1,8 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE inv_account;
-DROP TABLE inv_balance;
-DROP TABLE inv_checkpoint;
-
--- -----------------------------------------------------
--- Table `inventory`.`inv_account`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `inv_account` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `productId` BIGINT NOT NULL,
-  `locationId` BIGINT NULL,
-  `stockBalanceType` ENUM('ON_HAND', 'ON_ORDER', 'AVAILABLE', 'IN_TRANSIT') NOT NULL,
-  PRIMARY KEY (`id`));
-
-
--- -----------------------------------------------------
--- Table `inventory`.`inv_balance`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `inv_balance` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `accountId` BIGINT NOT NULL,
-  `balance` DECIMAL(15,2) NOT NULL,
-  `lastTransactionEntityId` BIGINT NOT NULL,
-  `lastTransactionChildId` BIGINT NOT NULL,
-  `lastTransactionType` ENUM('ORDER', 'RECEIVE', 'RETURN') NOT NULL,
-  `lastTransactionDateTime` DATETIME NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `fk_inv_balance_inv_account1_idx` (`accountId` ASC),
-  CONSTRAINT `fk_inv_balance_inv_account1`
-    FOREIGN KEY (`accountId`)
-    REFERENCES `inventory`.`inv_account` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-
--- -----------------------------------------------------
--- Table `inventory`.`inv_checkpoint`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `inv_checkpoint` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `accountId` BIGINT NOT NULL,
-  `amount` DECIMAL(15,2) NOT NULL,
-  `balanceAfter` DECIMAL(15,2) NOT NULL,
-  `lastTransactionEntityId` BIGINT NOT NULL,
-  `lastTransactionChildId` BIGINT NOT NULL,
-  `lastTransactionType` ENUM('ORDER', 'RECEIVE', 'RETURN') NOT NULL,
-  `lastTransactionDateTime` DATETIME NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `fk_inv_checkpoint_inv_account1_idx` (`accountId` ASC),
-  CONSTRAINT `fk_inv_checkpoint_inv_account1`
-    FOREIGN KEY (`accountId`)
-    REFERENCES `inventory`.`inv_account` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
-
-TRUNCATE TABLE inv_balance;
-TRUNCATE TABLE inv_checkpoint;
-TRUNCATE TABLE inv_account;
+TRUNCATE TABLE stock_account;
+TRUNCATE TABLE stock_checkpoint;
+TRUNCATE TABLE stock_account;
 
 TRUNCATE TABLE purchase;
 TRUNCATE TABLE order_details;
@@ -91,9 +36,9 @@ INSERT INTO purchase SET id=1, DATE="2015/01/01", dueDate="2015/01/01", freight=
 INSERT INTO order_details SET id=1, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantityUOM = 10, quantity=10, subTotal=100, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
 INSERT INTO order_details SET id=2, DATE="2015/01/01", discount=0, purchaseId=1, purchaseUOMConversion=1, quantityUOM = 20, quantity=20, subTotal=200, unitPrice=10, usePurchaseUOM=FALSE, productId=1;
 
-INSERT INTO inv_account SET id=1, productId = 1, locationId = 0, stockBalanceType = "ON_ORDER";
-INSERT INTO inv_balance SET id=1, accountId = 1, balance = 30, lastTransactionEntityId = 1, lastTransactionChildId = 1, lastTransactionType = "ORDER", lastTransactionDateTime = "2015/01/01";
-INSERT INTO inv_checkpoint SET id=1, accountId = 1, amount=10, balanceAfter=10, lastTransactionEntityId=1, lastTransactionChildId=1, lastTransactionType="ORDER", lastTransactionDateTime = "2015/01/01";
-INSERT INTO inv_checkpoint SET id=2, accountId = 1, amount=20, balanceAfter=30, lastTransactionEntityId=1, lastTransactionChildId=2, lastTransactionType="ORDER", lastTransactionDateTime = "2015/01/01";
+INSERT INTO stock_account SET id=1, productId = 1, locationId = 0, stockBalanceType = "ON_ORDER";
+INSERT INTO stock_balance SET id=1, accountId = 1, balance = 30, lastTransactionEntityId = 1, lastTransactionChildId = 1, lastTransactionType = "ORDER", lastTransactionDateTime = "2015/01/01";
+INSERT INTO stock_checkpoint SET id=1, accountId = 1, amount=10, balanceAfter=10, lastTransactionEntityId=1, lastTransactionChildId=1, lastTransactionType="ORDER", lastTransactionDateTime = "2015/01/01";
+INSERT INTO stock_checkpoint SET id=2, accountId = 1, amount=20, balanceAfter=30, lastTransactionEntityId=1, lastTransactionChildId=2, lastTransactionType="ORDER", lastTransactionDateTime = "2015/01/01";
 
 SET FOREIGN_KEY_CHECKS = 1;

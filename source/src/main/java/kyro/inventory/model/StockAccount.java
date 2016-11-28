@@ -1,22 +1,54 @@
 package kyro.inventory.model;
 
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+
 /**
  * Created by fahrur on 11/24/2016.
  */
-public class StockAccount {
+@Entity(name="StockAccount")
+@Table(name="stock_account")
+public class StockAccount extends IdentifiableEntity {
 
-    public Long id;
+    @Basic
+    private Long productId;
 
-    public Long productId;
+    @Basic
+    private Long locationId;
 
-    public Long locationId;
-
+    @Enumerated(EnumType.STRING)
     public StockBalanceType stockBalanceType;
 
+    public StockAccount() {}
+
     public StockAccount(Long id, Long productId, Long locationId, StockBalanceType type) {
-        this.id = id;
+        this.setId(id);
         this.productId = productId;
         this.locationId = locationId;
         this.stockBalanceType = type;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public Long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
+    }
+
+    public StockBalanceType getStockBalanceType() {
+        return stockBalanceType;
+    }
+
+    public void setStockBalanceType(StockBalanceType stockBalanceType) {
+        this.stockBalanceType = stockBalanceType;
     }
 }

@@ -1,6 +1,7 @@
 package kyro.inventory.model;
 
 import javax.persistence.Entity;
+import javax.persistence.Table;
 
 /**
  * ProductCategory
@@ -8,7 +9,8 @@ import javax.persistence.Entity;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "product_category")
+@Entity(name="ProductCategory")
+@Table(name="product_category")
 public class ProductCategory extends ActiveAuditableEntity {
 
     /**

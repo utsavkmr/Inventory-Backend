@@ -10,7 +10,8 @@ import java.util.Date;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "order_details")
+@Entity(name="OrderDetails")
+@Table(name="order_details")
 public class OrderDetails extends IdentifiableEntity {
 
     @Column(name="purchaseId",insertable=false, updatable=false)

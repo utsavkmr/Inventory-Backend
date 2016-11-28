@@ -11,7 +11,8 @@ import java.util.List;
  * @author fahrur
  * @version 1.0
  */
-@Entity(name = "purchase")
+@Entity(name="Purchase")
+@Table(name="purchase")
 public class Purchase extends IdentifiableEntity {
 
     @Basic
