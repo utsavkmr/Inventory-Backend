@@ -91,7 +91,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                 Date lastTransactionDateTime = purchase.getDate();
 
                 try {
-                    StockCheckPoint stockCheckPoint = updateStockBalance(
+                    StockCheckpoint stockCheckpoint = updateStockBalance(
                         productId,
                         locationId,
                         amount,
@@ -108,6 +108,34 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         }
 
     }
+
+    /*
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void accBalanceOnCreate(Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        Double total = purchase.getTotal();
+        Double subTotal = purchase.getSubTotal();
+        Long lastTransactionEntityId = purchase.getId();
+        Long lastTransactionChildId = null;
+        TransactionType lastTransactionType = TransactionType.ORDER;
+        Date lastTransactionDateTime = purchase.getDate();
+
+        try {
+
+            AccCheckpoint accCheckPointPayable = updateAccBalance(
+                    null,
+                    total,
+                    "2110",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+        } catch (SQLException e) {
+            throw new ServiceException("Can't create stock account",e);
+        }
+    }
+    */
 
     public void calculateQtyAndTotal(Purchase purchase) {
 
@@ -167,35 +195,36 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     entityManager.remove(orderDetailsUpdated);
                 }
             }
-
-            for (OrderDetails orderDetails : updated.getOrders()) {
-
-                //Update
-                Long productId = orderDetails.getProduct().getId();
-                double amount = orderDetails.getQuantity();
-                StockBalanceType balanceType = StockBalanceType.ON_ORDER;
-                Long lastTransactionEntityId = purchase.getId();
-                Long lastTransactionChildId = orderDetails.getId();
-                TransactionType lastTransactionType = TransactionType.ORDER;
-                Date lastTransactionDateTime = purchase.getDate();
-
-                try {
-                    StockCheckPoint stockCheckPointUpdate = updateStockBalance(
-                            productId,
-                            0L,
-                            amount,
-                            balanceType,
-                            lastTransactionEntityId,
-                            lastTransactionChildId,
-                            lastTransactionType,
-                            lastTransactionDateTime
-                    );
-                } catch (SQLException e) {
-                    throw new ServiceException("Can't create stock account",e);
-                }
-
-            }
         }
+
+        for (OrderDetails orderDetails : updated.getOrders()) {
+
+            //Update
+            Long productId = orderDetails.getProduct().getId();
+            double amount = orderDetails.getQuantity();
+            StockBalanceType balanceType = StockBalanceType.ON_ORDER;
+            Long lastTransactionEntityId = purchase.getId();
+            Long lastTransactionChildId = orderDetails.getId();
+            TransactionType lastTransactionType = TransactionType.ORDER;
+            Date lastTransactionDateTime = purchase.getDate();
+
+            try {
+                StockCheckpoint stockCheckpointUpdate = updateStockBalance(
+                        productId,
+                        0L,
+                        amount,
+                        balanceType,
+                        lastTransactionEntityId,
+                        lastTransactionChildId,
+                        lastTransactionType,
+                        lastTransactionDateTime
+                );
+            } catch (SQLException e) {
+                throw new ServiceException("Can't create stock account",e);
+            }
+
+        }
+
 
     }
 
@@ -228,6 +257,58 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
     }
 
+    public void updatePurchaseReceived(List<ReceiveDetails> receiveDetailsList,Purchase purchase) throws ServiceException, DatabasePersistenceException {
 
+        if(receiveDetailsList!=null) {
+            for(ReceiveDetails receiveDetails : receiveDetailsList) {
+                if(receiveDetails.getId()==null) {
+                    entityManager.persist(receiveDetails);
+                }
+                else {
+                    entityManager.merge(receiveDetails);
+                }
+                qtyBalanceOnReceive(receiveDetails, purchase);
+            }
+        }
+
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void qtyBalanceOnReceive(ReceiveDetails receiveDetails, Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        //Update
+        Long productId = receiveDetails.getProduct().getId();
+        Long locationId = receiveDetails.getLocation().getId();
+        double amount = receiveDetails.getQuantity();
+        Long lastTransactionEntityId = purchase.getId();
+        Long lastTransactionChildId = receiveDetails.getId();
+        Date lastTransactionDateTime = purchase.getDate();
+
+        try {
+            StockCheckpoint stockCheckpointUpdate = updateStockBalance(
+                    productId,
+                    locationId,
+                    amount,
+                    StockBalanceType.RECEIVE,
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    TransactionType.RECEIVE,
+                    lastTransactionDateTime
+            );
+
+            updateStockBalance(
+                    productId,
+                    0L,
+                    -1* amount,
+                    StockBalanceType.ON_ORDER,
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    TransactionType.RECEIVE,
+                    lastTransactionDateTime
+            );
+
+        } catch (SQLException e) {
+            throw new ServiceException("Can't create stock account",e);
+        }
+    }
 
 }

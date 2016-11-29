@@ -4,11 +4,11 @@ import javax.persistence.*;
 import java.util.Date;
 
 /**
- * Created by fahrur on 11/24/2016.
+ * Created by fahrur on 11/29/2016.
  */
-@Entity(name = "StockCheckpoint")
-@Table(name="stock_checkpoint")
-public class StockCheckpoint extends IdentifiableEntity {
+@Entity(name="AccCheckpoint")
+@Table(name="acc_checkpoint")
+public class AccCheckpoint extends IdentifiableEntity {
 
     @Basic
     private Long accountId;
@@ -37,9 +37,9 @@ public class StockCheckpoint extends IdentifiableEntity {
     @Basic
     private Long closingId;
 
-    public StockCheckpoint() {}
+    public AccCheckpoint() {}
 
-    public StockCheckpoint(
+    public AccCheckpoint(
             Long id, Long accountId, Double amount, Double balanceAfter,
             Long lastTransactionEntityId, Long lastTransactionChildId, TransactionType lastTransactionType,
             Date lastTransactionDateTime, Boolean closed, Long closingId

@@ -32,6 +32,7 @@ public class PurchaseServiceTest extends BaseTest {
         purchase.setTaxPercent(0.0);
         purchase.setTaxTotal(0.0);
         purchase.setVendor(vendor);
+        purchase.setClosed(false);
 
         OrderDetails orderDetails = new OrderDetails();
         orderDetails.setDate(new Date());
@@ -71,6 +72,7 @@ public class PurchaseServiceTest extends BaseTest {
         purchase.setTaxPercent(0.0);
         purchase.setTaxTotal(0.0);
         purchase.setVendor(vendor);
+        purchase.setClosed(false);
 
         OrderDetails orderDetails = new OrderDetails();
         orderDetails.setDate(new Date());
@@ -102,6 +104,33 @@ public class PurchaseServiceTest extends BaseTest {
         purchase.setOrders(orders);
 
         purchaseService.update(purchase);
+    }
+
+    @Test
+    public void receivePurchaseTest() throws ServiceException, DatabasePersistenceException {
+        Vendor vendor = vendorService.get(1L);
+        Product product = productService.get(1L);
+        Location location = locationService.get(1L);
+
+        Purchase purchase = new Purchase();
+        purchase.setId(1L);
+
+        List<ReceiveDetails> receiveDetailsList = new ArrayList<ReceiveDetails>();
+
+        ReceiveDetails receiveDetails = new ReceiveDetails();
+        receiveDetails.setPurchaseId(1L);
+        receiveDetails.setProduct(product);
+        receiveDetails.setLocation(location);
+        receiveDetails.setQuantity(10.0);
+        receiveDetails.setQuantityUOM(10.0);
+        receiveDetails.setPurchaseUOMConversion(1.0);
+        receiveDetails.setUsePurchaseUOM(true);
+        receiveDetails.setReceiveDate(new Date());
+
+        receiveDetailsList.add(receiveDetails);
+
+        purchaseService.updatePurchaseReceived(receiveDetailsList,purchase);
+
     }
 
 }

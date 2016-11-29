@@ -69,6 +69,10 @@ public class Purchase extends IdentifiableEntity {
     @NotNull
     private Double freight;
 
+    @Basic
+    @NotNull
+    private Boolean closed;
+
     public Purchase() {}
 
     public String getNo() {
@@ -181,5 +185,13 @@ public class Purchase extends IdentifiableEntity {
 
     public void setFreight(Double freight) {
         this.freight = freight;
+    }
+
+    public Boolean getClosed() {
+        return closed;
+    }
+
+    public void setClosed(Boolean closed) {
+        this.closed = closed;
     }
 }

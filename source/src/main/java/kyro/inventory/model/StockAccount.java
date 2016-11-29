@@ -17,7 +17,7 @@ public class StockAccount extends IdentifiableEntity {
     private Long locationId;
 
     @Enumerated(EnumType.STRING)
-    public StockBalanceType stockBalanceType;
+    private StockBalanceType stockBalanceType;
 
     public StockAccount() {}
 

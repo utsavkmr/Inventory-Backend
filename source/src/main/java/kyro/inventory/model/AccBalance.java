@@ -4,20 +4,17 @@ import javax.persistence.*;
 import java.util.Date;
 
 /**
- * Created by fahrur on 11/24/2016.
+ * Created by fahrur on 11/29/2016.
  */
-@Entity(name = "StockCheckpoint")
-@Table(name="stock_checkpoint")
-public class StockCheckpoint extends IdentifiableEntity {
+@Entity(name="AccBalance")
+@Table(name="acc_balance")
+public class AccBalance extends IdentifiableEntity {
 
     @Basic
     private Long accountId;
 
     @Basic
-    private Double amount;
-
-    @Basic
-    private Double balanceAfter;
+    private Double balance;
 
     @Basic
     private Long lastTransactionEntityId;
@@ -31,29 +28,20 @@ public class StockCheckpoint extends IdentifiableEntity {
     @Basic
     private Date lastTransactionDateTime;
 
-    @Basic
-    private Boolean closed;
+    public AccBalance() {}
 
-    @Basic
-    private Long closingId;
-
-    public StockCheckpoint() {}
-
-    public StockCheckpoint(
-            Long id, Long accountId, Double amount, Double balanceAfter,
+    public AccBalance(
+            Long id, Long accountId, Double balance,
             Long lastTransactionEntityId, Long lastTransactionChildId, TransactionType lastTransactionType,
-            Date lastTransactionDateTime, Boolean closed, Long closingId
+            Date lastTransactionDateTime
     ) {
         this.setId(id);
         this.accountId = accountId;
-        this.amount = amount;
-        this.balanceAfter = balanceAfter;
+        this.balance = balance;
         this.lastTransactionChildId = lastTransactionChildId;
         this.lastTransactionEntityId = lastTransactionEntityId;
         this.lastTransactionType = lastTransactionType;
         this.lastTransactionDateTime = lastTransactionDateTime;
-        this.closed = closed;
-        this.closingId = closingId;
     }
 
     public Long getAccountId() {
@@ -64,20 +52,12 @@ public class StockCheckpoint extends IdentifiableEntity {
         this.accountId = accountId;
     }
 
-    public Double getAmount() {
-        return amount;
+    public Double getBalance() {
+        return balance;
     }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
-
-    public Double getBalanceAfter() {
-        return balanceAfter;
-    }
-
-    public void setBalanceAfter(Double balanceAfter) {
-        this.balanceAfter = balanceAfter;
+    public void setBalance(Double balance) {
+        this.balance = balance;
     }
 
     public Long getLastTransactionEntityId() {
@@ -112,19 +92,4 @@ public class StockCheckpoint extends IdentifiableEntity {
         this.lastTransactionDateTime = lastTransactionDateTime;
     }
 
-    public Boolean getClosed() {
-        return closed;
-    }
-
-    public void setClosed(Boolean closed) {
-        this.closed = closed;
-    }
-
-    public Long getClosingId() {
-        return closingId;
-    }
-
-    public void setClosingId(Long closingId) {
-        this.closingId = closingId;
-    }
 }
