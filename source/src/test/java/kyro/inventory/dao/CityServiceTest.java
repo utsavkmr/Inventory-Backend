@@ -4,6 +4,8 @@ import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
 import kyro.inventory.model.City;
 import org.junit.Test;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlGroup;
 
 import static org.junit.Assert.*;
 
@@ -12,6 +14,9 @@ import java.util.List;
 /**
  * Created by fahrur on 11/21/2016.
  */
+@SqlGroup({
+        @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = "classpath:kyro/inventory/dao/beforeTestRun.sql")
+})
 public class CityServiceTest extends BaseTest {
 
     @Test

@@ -49,6 +49,10 @@ public class Purchase extends IdentifiableEntity {
     @JoinColumn(name="purchaseId", nullable = false)
     private List<OrderDetails> orders;
 
+    @OneToMany(cascade={CascadeType.PERSIST,CascadeType.MERGE})
+    @JoinColumn(name="purchaseId", nullable = false)
+    private List<ReceiveDetails> receiveDetailsList;
+
     @Basic
     @NotNull
     private Double subTotal;
@@ -145,6 +149,14 @@ public class Purchase extends IdentifiableEntity {
 
     public void setOrders(List<OrderDetails> orders) {
         this.orders = orders;
+    }
+
+    public List<ReceiveDetails> getReceiveDetailsList() {
+        return receiveDetailsList;
+    }
+
+    public void setReceiveDetailsList(List<ReceiveDetails> receiveDetailsList) {
+        this.receiveDetailsList = receiveDetailsList;
     }
 
     public Double getSubTotal() {

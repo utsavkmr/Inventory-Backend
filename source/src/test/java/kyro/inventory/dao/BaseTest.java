@@ -24,9 +24,6 @@ import java.util.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:kyro/inventory/dao/TestContext.xml")
-@SqlGroup({
-        @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = "classpath:kyro/inventory/dao/beforeTestRun.sql")
-})
 public abstract class BaseTest {
 
     protected final String stringTest = "test";

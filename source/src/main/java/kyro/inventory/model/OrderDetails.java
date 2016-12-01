@@ -1,6 +1,8 @@
 package kyro.inventory.model;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 
@@ -53,6 +55,14 @@ public class OrderDetails extends IdentifiableEntity {
     @Basic
     @NotNull
     private Date date;
+
+    @ManyToOne(fetch= FetchType.EAGER)
+    @JoinColumn(name="returnDetailsId")
+    private ReturnDetails returnDetails;
+
+    @ManyToOne(fetch= FetchType.EAGER, cascade = {CascadeType.REMOVE})
+    @JoinColumn(name="receiveDetailsId")
+    private ReceiveDetails receiveDetails;
 
     public OrderDetails() {}
 
@@ -135,4 +145,21 @@ public class OrderDetails extends IdentifiableEntity {
     public void setDate(Date date) {
         this.date = date;
     }
+
+    public ReturnDetails getReturnDetails() {
+        return returnDetails;
+    }
+
+    public void setReturnDetails(ReturnDetails returnDetails) {
+        this.returnDetails = returnDetails;
+    }
+
+    public ReceiveDetails getReceiveDetails() {
+        return receiveDetails;
+    }
+
+    public void setReceiveDetails(ReceiveDetails receiveDetails) {
+        this.receiveDetails = receiveDetails;
+    }
+
 }

@@ -46,6 +46,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         calculateQtyAndTotal(purchase);
         entityManager.persist(purchase);
         qtyBalanceOnCreate(purchase);
+        accBalanceOnCreate(purchase);
         return purchase;
     }
 
@@ -66,6 +67,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         Purchase updated = entityManager.find(Purchase.class,purchase.getId());
 
         qtyBalanceOnUpdate(purchase,updated,existingOrderDetails);
+        accBalanceOnUpdate(purchase);
 
         return purchase;
     }
@@ -109,11 +111,12 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
     }
 
-    /*
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void accBalanceOnCreate(Purchase purchase) throws ServiceException, DatabasePersistenceException {
         Double total = purchase.getTotal();
         Double subTotal = purchase.getSubTotal();
+        Double freight = purchase.getFreight();
         Long lastTransactionEntityId = purchase.getId();
         Long lastTransactionChildId = null;
         TransactionType lastTransactionType = TransactionType.ORDER;
@@ -131,11 +134,98 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     lastTransactionDateTime
             );
 
+            AccCheckpoint accCheckPointInventory = updateAccBalance(
+                    null,
+                    subTotal,
+                    "1310",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+            AccCheckpoint accCheckPointFreight = updateAccBalance(
+                    null,
+                    freight,
+                    "5700",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+            AccCheckpoint accCheckPointTax = updateAccBalance(
+                    null,
+                    freight,
+                    "5910",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
         } catch (SQLException e) {
             throw new ServiceException("Can't create stock account",e);
         }
     }
-    */
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void accBalanceOnUpdate(Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        Double total = purchase.getTotal();
+        Double subTotal = purchase.getSubTotal();
+        Double freight = purchase.getFreight();
+        Long lastTransactionEntityId = purchase.getId();
+        Long lastTransactionChildId = null;
+        TransactionType lastTransactionType = TransactionType.ORDER;
+        Date lastTransactionDateTime = purchase.getDate();
+
+        try {
+
+            AccCheckpoint accCheckPointPayable = updateAccBalance(
+                    null,
+                    total,
+                    "2110",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+            AccCheckpoint accCheckPointInventory = updateAccBalance(
+                    null,
+                    subTotal,
+                    "1310",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+            AccCheckpoint accCheckPointFreight = updateAccBalance(
+                    null,
+                    freight,
+                    "5700",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+            AccCheckpoint accCheckPointTax = updateAccBalance(
+                    null,
+                    freight,
+                    "5910",
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    lastTransactionType,
+                    lastTransactionDateTime
+            );
+
+        } catch (SQLException e) {
+            throw new ServiceException("Can't create stock account",e);
+        }
+    }
+
 
     public void calculateQtyAndTotal(Purchase purchase) {
 
@@ -189,10 +279,20 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     }
                 }
 
+                //Delete Order Details
                 if(!isExist) {
+                    // TODO :
+                    // Check if exist receive details & return details that quantity > 0
+                    //
+                    ReceiveDetails receiveDetails = orderDetailsUpdated.getReceiveDetails();
+                    if(receiveDetails!=null) {
+                        qtyBalanceOnReceiveDelete(receiveDetails,purchase);
+                        deleteReceiveDetails(receiveDetails);
+                    }
+
                     updated.getOrders().remove(orderDetailsUpdated);
                     qtyBalanceOnDelete(purchase, orderDetailsUpdated);
-                    entityManager.remove(orderDetailsUpdated);
+                    deleteOrderDetails(orderDetailsUpdated);
                 }
             }
         }
@@ -224,8 +324,19 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             }
 
         }
+    }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteReceiveDetails(ReceiveDetails receiveDetails) {
+        OrderDetails orderDetails = entityManager.find(OrderDetails.class, receiveDetails.getId());
+        orderDetails.setReceiveDetails(null);
+        entityManager.merge(orderDetails);
+        entityManager.remove(receiveDetails);
+    }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteOrderDetails(OrderDetails orderDetails) {
+        entityManager.remove(orderDetails);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -259,18 +370,25 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
     public void updatePurchaseReceived(List<ReceiveDetails> receiveDetailsList,Purchase purchase) throws ServiceException, DatabasePersistenceException {
 
+        Purchase purchaseUpdated = entityManager.find(Purchase.class, purchase.getId());
+
         if(receiveDetailsList!=null) {
             for(ReceiveDetails receiveDetails : receiveDetailsList) {
+
                 if(receiveDetails.getId()==null) {
                     entityManager.persist(receiveDetails);
+                    purchaseUpdated.getReceiveDetailsList().add(receiveDetails);
+                    qtyBalanceOnReceive(receiveDetails, purchase);
                 }
                 else {
                     entityManager.merge(receiveDetails);
+                    qtyBalanceOnReceiveUpdate(receiveDetails, purchase);
                 }
-                qtyBalanceOnReceive(receiveDetails, purchase);
+
             }
         }
 
+        entityManager.merge(purchaseUpdated);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -284,7 +402,8 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         Date lastTransactionDateTime = purchase.getDate();
 
         try {
-            StockCheckpoint stockCheckpointUpdate = updateStockBalance(
+
+            StockCheckpoint stockCheckpointReceive = updateStockBalance(
                     productId,
                     locationId,
                     amount,
@@ -295,10 +414,132 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     lastTransactionDateTime
             );
 
-            updateStockBalance(
+            StockCheckpoint stockCheckpointOrder = updateStockBalance(
                     productId,
                     0L,
                     -1* amount,
+                    StockBalanceType.ON_ORDER,
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    TransactionType.RECEIVE,
+                    lastTransactionDateTime
+            );
+
+
+
+        } catch (SQLException e) {
+            throw new ServiceException("Can't create stock account",e);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void qtyBalanceOnReceiveUpdate(ReceiveDetails receiveDetails, Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        //Update
+        Long productId = receiveDetails.getProduct().getId();
+        Long locationId = receiveDetails.getLocation().getId();
+        double amount = receiveDetails.getQuantity();
+        Long lastTransactionEntityId = purchase.getId();
+        Long lastTransactionChildId = receiveDetails.getId();
+        Date lastTransactionDateTime = purchase.getDate();
+
+        try {
+            Location location = getLocationReceiveDetails(receiveDetails);
+
+            if(location !=null && locationId == location.getId()) {
+
+                StockCheckpoint stockCheckpointReceive = updateStockBalance(
+                        productId,
+                        locationId,
+                        amount,
+                        StockBalanceType.RECEIVE,
+                        lastTransactionEntityId,
+                        lastTransactionChildId,
+                        TransactionType.RECEIVE,
+                        lastTransactionDateTime
+                );
+
+                StockCheckpoint stockCheckpointOrder = updateStockBalance(
+                        productId,
+                        0L,
+                        -1 * amount,
+                        StockBalanceType.ON_ORDER,
+                        lastTransactionEntityId,
+                        lastTransactionChildId,
+                        TransactionType.RECEIVE,
+                        lastTransactionDateTime
+                );
+
+            }
+            else {
+
+                deleteStockCheckpoint(
+                        productId,
+                        location.getId(),
+                        amount,
+                        StockBalanceType.RECEIVE,
+                        lastTransactionEntityId,
+                        lastTransactionChildId,
+                        TransactionType.RECEIVE,
+                        lastTransactionDateTime
+                );
+
+                StockCheckpoint stockCheckpointReceive = updateStockBalance(
+                        productId,
+                        locationId,
+                        amount,
+                        StockBalanceType.RECEIVE,
+                        lastTransactionEntityId,
+                        lastTransactionChildId,
+                        TransactionType.RECEIVE,
+                        lastTransactionDateTime
+                );
+
+                updateStockBalance(
+                        productId,
+                        0L,
+                        -1 * amount,
+                        StockBalanceType.ON_ORDER,
+                        lastTransactionEntityId,
+                        lastTransactionChildId,
+                        TransactionType.RECEIVE,
+                        lastTransactionDateTime
+                );
+
+            }
+
+        } catch (SQLException e) {
+            throw new ServiceException("Can't create stock account",e);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void qtyBalanceOnReceiveDelete(ReceiveDetails receiveDetails, Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        //Delete
+        Long productId = receiveDetails.getProduct().getId();
+        Long locationId = receiveDetails.getLocation().getId();
+        double amount = receiveDetails.getQuantity();
+        Long lastTransactionEntityId = purchase.getId();
+        Long lastTransactionChildId = receiveDetails.getId();
+        Date lastTransactionDateTime = purchase.getDate();
+
+        try {
+            Location location = getLocationReceiveDetails(receiveDetails);
+
+            deleteStockCheckpoint(
+                    productId,
+                    location.getId(),
+                    amount,
+                    StockBalanceType.RECEIVE,
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    TransactionType.RECEIVE,
+                    lastTransactionDateTime
+            );
+
+            deleteStockCheckpoint(
+                    productId,
+                    0L,
+                    amount,
                     StockBalanceType.ON_ORDER,
                     lastTransactionEntityId,
                     lastTransactionChildId,

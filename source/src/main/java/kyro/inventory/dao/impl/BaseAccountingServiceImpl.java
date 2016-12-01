@@ -32,6 +32,9 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
     private static final String QUERY_GET_STOCK_CHECKPOINT = "SELECT c FROM StockCheckpoint c WHERE c.accountId = ?1 AND c.lastTransactionEntityId=?2" +
             " AND c.lastTransactionChildId=?3 AND c.lastTransactionType=?4";
 
+    private static final String QUERY_GET_STOCK_CHECKPOINT_BY_CHILD_ID = "SELECT c FROM StockCheckpoint c WHERE c.accountId = ?1 AND c.lastTransactionEntityId=?2" +
+            " AND c.lastTransactionChildId=?3 AND c.lastTransactionType=?4";
+
     private static final String QUERY_GET_ACC_CHECKPOINT = "SELECT c FROM AccCheckpoint c WHERE c.accountId = ?1 AND c.lastTransactionEntityId=?2" +
             " AND c.lastTransactionChildId=?3 AND c.lastTransactionType=?4";
 
@@ -114,6 +117,42 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
         List<StockCheckpoint> stockCheckPoints = q.getResultList();
         if (stockCheckPoints.size() > 0) {
             ret = q.getSingleResult();
+        }
+        else {
+            return null;
+        }
+
+        return ret;
+    }
+
+    protected Location getLocationReceiveDetails(ReceiveDetails receiveDetails) {
+        Location ret = null;
+
+        Long locationId = receiveDetails.getLocation().getId();
+        Long productId = receiveDetails.getProduct().getId();
+        Long lastTransactionEntityId = receiveDetails.getPurchaseId();
+        Long lastTransactionChildId = receiveDetails.getId();
+        TransactionType lastTransactionType = TransactionType.RECEIVE;
+        StockBalanceType balType = StockBalanceType.RECEIVE;
+
+        StockCheckpoint stockCheckpoint = null;
+
+        StockAccount stockAccount = getStockAccount(new StockAccount(null,productId,locationId,StockBalanceType.RECEIVE));
+
+        TypedQuery<StockCheckpoint> q = getEntityManager().createQuery(QUERY_GET_STOCK_CHECKPOINT_BY_CHILD_ID,
+                StockCheckpoint.class);
+
+        q.setParameter(1, stockAccount.getId());
+        q.setParameter(2, lastTransactionEntityId);
+        q.setParameter(3, lastTransactionChildId);
+        q.setParameter(4, lastTransactionType);
+
+        List<StockCheckpoint> stockCheckPoints = q.getResultList();
+        if (stockCheckPoints.size() > 0) {
+            stockCheckpoint = q.getSingleResult();
+
+            Long stockAccountId = stockCheckpoint.getAccountId();
+            ret = entityManager.find(Location.class, stockAccount.getLocationId());
         }
         else {
             return null;

@@ -2,14 +2,13 @@ package kyro.inventory.model;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
 
 /**
- * Created by fahrur on 11/29/2016.
+ * Created by fahrur on 12/1/2016.
  */
-@Entity(name="ReceiveDetails")
-@Table(name="receive_details")
-public class ReceiveDetails extends IdentifiableEntity {
+@Entity(name="ReturnDetails")
+@Table(name="return_details")
+public class ReturnDetails extends IdentifiableEntity {
 
     @Column(name="purchaseId",insertable=false, updatable=false)
     private Long purchaseId;
@@ -18,16 +17,6 @@ public class ReceiveDetails extends IdentifiableEntity {
     @JoinColumn(name="productId")
     @NotNull
     private Product product;
-
-    @ManyToOne(fetch= FetchType.EAGER)
-    @JoinColumn(name="locationId")
-    @NotNull
-    private Location location;
-
-    @ManyToOne(fetch= FetchType.EAGER)
-    @JoinColumn(name="orderDetailsId")
-    @NotNull
-    private OrderDetails orderDetails;
 
     @Basic
     @NotNull
@@ -45,11 +34,7 @@ public class ReceiveDetails extends IdentifiableEntity {
     @NotNull
     private Double purchaseUOMConversion;
 
-    @Basic
-    @NotNull
-    private Date receiveDate;
-
-    public ReceiveDetails() {}
+    public ReturnDetails() {}
 
     public Long getPurchaseId() {
         return purchaseId;
@@ -65,22 +50,6 @@ public class ReceiveDetails extends IdentifiableEntity {
 
     public void setProduct(Product product) {
         this.product = product;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-
-    public OrderDetails getOrderDetails() {
-        return orderDetails;
-    }
-
-    public void setOrderDetails(OrderDetails orderDetails) {
-        this.orderDetails = orderDetails;
     }
 
     public Double getQuantityUOM() {
@@ -113,13 +82,5 @@ public class ReceiveDetails extends IdentifiableEntity {
 
     public void setPurchaseUOMConversion(Double purchaseUOMConversion) {
         this.purchaseUOMConversion = purchaseUOMConversion;
-    }
-
-    public Date getReceiveDate() {
-        return receiveDate;
-    }
-
-    public void setReceiveDate(Date receiveDate) {
-        this.receiveDate = receiveDate;
     }
 }

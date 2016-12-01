@@ -4,6 +4,8 @@ import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
 import kyro.inventory.model.*;
 import org.junit.Test;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlGroup;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,6 +14,12 @@ import java.util.List;
 /**
  * Created by fahrur on 11/23/2016.
  */
+@SqlGroup({
+        @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {
+            "classpath:kyro/inventory/dao/beforeTestRun.sql",
+            "classpath:kyro/inventory/dao/purchaseTestScenario.sql"
+        })
+})
 public class PurchaseServiceTest extends BaseTest {
     @Test
     public void createPurchaseTest() throws ServiceException, DatabasePersistenceException {
@@ -80,7 +88,7 @@ public class PurchaseServiceTest extends BaseTest {
         orderDetails.setUnitPrice(10.0);
         orderDetails.setQuantityUOM(5.0);
         orderDetails.setDiscount(0.0);
-        orderDetails.setSubTotal(100.0);
+        orderDetails.setSubTotal(50.0);
         orderDetails.setPurchaseUOMConversion(1.0);
         orderDetails.setUsePurchaseUOM(false);
         orderDetails.setPurchaseId(1L);
@@ -111,6 +119,8 @@ public class PurchaseServiceTest extends BaseTest {
         Vendor vendor = vendorService.get(1L);
         Product product = productService.get(1L);
         Location location = locationService.get(1L);
+        OrderDetails orderDetails = new OrderDetails();
+        orderDetails.setId(1L);
 
         Purchase purchase = new Purchase();
         purchase.setId(1L);
@@ -118,7 +128,7 @@ public class PurchaseServiceTest extends BaseTest {
         List<ReceiveDetails> receiveDetailsList = new ArrayList<ReceiveDetails>();
 
         ReceiveDetails receiveDetails = new ReceiveDetails();
-        receiveDetails.setPurchaseId(1L);
+        receiveDetails.setOrderDetails(orderDetails);
         receiveDetails.setProduct(product);
         receiveDetails.setLocation(location);
         receiveDetails.setQuantity(10.0);
