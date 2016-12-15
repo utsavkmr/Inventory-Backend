@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.junit.Assert.*;
+
 /**
  * Created by fahrur on 11/23/2016.
  */
@@ -142,5 +144,16 @@ public class PurchaseServiceTest extends BaseTest {
         purchaseService.updatePurchaseReceived(receiveDetailsList,purchase);
 
     }
+
+    @Test
+    public void testValidateCreate() {
+        Purchase purchase = new Purchase();
+
+        StringBuilder errorMessage = new StringBuilder();
+        purchaseService.validateCreate(purchase,errorMessage);
+
+        assertNotEquals("",errorMessage);
+    }
+
 
 }

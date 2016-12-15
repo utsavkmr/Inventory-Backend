@@ -15,6 +15,7 @@ import kyro.inventory.ServiceException;
 import kyro.inventory.model.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.transaction.annotation.Transactional;
 
 import static kyro.inventory.dao.impl.ServiceHelper.entityErrorMessageHelper;
@@ -47,6 +48,12 @@ public abstract class BaseServiceImpl<T extends IdentifiableEntity> {
      */
     @Autowired
     protected Validator validator;
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    protected MessageByLocaleServiceImpl messageService;
 
     /**
      * The class name of the class extends this class.
@@ -175,6 +182,21 @@ public abstract class BaseServiceImpl<T extends IdentifiableEntity> {
         String username = LoginUserThread.loginUser.get().getUsername();
         entity.setUpdatedBy(username);
         entity.setUpdatedDate(new Date());
+    }
+
+    protected Long getTotalPage(Long totalRow, BaseSearchParameters criteria) {
+        long totalPage = 0;
+
+        long limit = criteria.limit;
+        totalPage = totalRow / limit;
+        totalPage += totalRow % limit > 0 ? 1 : 0;
+        return totalPage;
+    }
+
+    public void getErrorMessageFromList(List<String> errorMessages,StringBuilder stringBuilder) {
+        for(String error : errorMessages) {
+            stringBuilder.append(error+", ");
+        }
     }
 
 }

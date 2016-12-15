@@ -3,6 +3,8 @@ package kyro.inventory.dao;
 import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
 import kyro.inventory.model.Product;
+import kyro.inventory.model.ProductSearchCriteria;
+import kyro.inventory.model.Purchase;
 
 import java.util.List;
 
@@ -49,4 +51,6 @@ public interface ProductService {
      * @throws DatabasePersistenceException the exception
      */
     public List<Product> getAll(Boolean isActive) throws ServiceException, DatabasePersistenceException;
+
+    public List<Product> search(ProductSearchCriteria criteria) throws ServiceException, DatabasePersistenceException;
 }

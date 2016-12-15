@@ -2,6 +2,7 @@ package kyro.inventory.dao;
 
 import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
+import kyro.inventory.model.BaseSearchParameters;
 import kyro.inventory.model.Vendor;
 
 import java.util.List;
@@ -49,4 +50,6 @@ public interface VendorService {
      * @throws DatabasePersistenceException the exception
      */
     public List<Vendor> getAll(Boolean isActive) throws ServiceException, DatabasePersistenceException;
+
+    public List<Vendor> search(BaseSearchParameters criteria) throws ServiceException, DatabasePersistenceException;
 }

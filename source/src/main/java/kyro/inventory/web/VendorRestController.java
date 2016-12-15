@@ -3,10 +3,13 @@ package kyro.inventory.web;
 import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
 import kyro.inventory.dao.VendorService;
+import kyro.inventory.dao.impl.ServiceHelper;
+import kyro.inventory.model.BaseSearchParameters;
 import kyro.inventory.model.Vendor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -30,13 +33,21 @@ public class VendorRestController extends BaseRestController {
      * @return the cities
      * @throws ServiceException the exception
      * @throws DatabasePersistenceException the exception
-
-    @RequestMapping("")
-    public List<City> search() throws ServiceException, DatabasePersistenceException {
-        List<City> cities = cityService.getAll(false);
-        return cities;
-    }
      */
+    @RequestMapping("")
+    public List<Vendor> search() throws ServiceException, DatabasePersistenceException {
+        List<Vendor> vendors = vendorService.getAll(false);
+        return vendors;
+    }
+
+    @RequestMapping(value = "/search", method= RequestMethod.POST)
+    public List<Vendor> search(@RequestBody BaseSearchParameters criteria, HttpServletResponse response)
+            throws ServiceException, DatabasePersistenceException
+    {
+        List<Vendor> products = vendorService.search(criteria);
+        ServiceHelper.setSearchResponseTotalPage(response, criteria);
+        return products;
+    }
 
     /**
      * Get the vendor

@@ -20,7 +20,13 @@ public class BaseSearchParameters {
 
     public SortType order;
 
-    public Map<String, String> filters = new HashMap<String, String>();
+    //public Map<String, String> filters = new HashMap<String, String>();
+
+    public Long totalRow;
+
+    public Long totalPage;
+
+    public String name;
 
     public BaseSearchParameters() {
     }

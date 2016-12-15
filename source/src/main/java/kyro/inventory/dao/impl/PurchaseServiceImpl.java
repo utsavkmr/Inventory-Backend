@@ -4,8 +4,8 @@ import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
 import kyro.inventory.dao.PurchaseService;
 import kyro.inventory.model.*;
+import kyro.inventory.dao.impl.ServiceHelper;
 
-import org.aspectj.weaver.ast.Or;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Query;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,6 +34,49 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
      */
     public PurchaseServiceImpl() {
         super(Purchase.class);
+    }
+
+
+    public Boolean validateCreate(Purchase purchase,StringBuilder errorMessage) {
+        List<String> errorMessages = new ArrayList<String>();
+        Boolean ret = true;
+
+        if(purchase.getDate()==null) {
+            errorMessages.add(messageService.getMessage("purchase.order.date_empty"));
+            ret &= false;
+        }
+
+        if(purchase.getVendor()==null) {
+            errorMessages.add(messageService.getMessage("purchase.order.vendor_empty"));
+            ret &= false;
+        }
+
+        if(purchase.getVendor()==null) {
+            errorMessages.add(messageService.getMessage("purchase.order.vendor_empty"));
+            ret &= false;
+        }
+
+        if(purchase.getOrders()!=null) {
+            Boolean orderDetailsValidation = true;
+            for(OrderDetails orderDetails : purchase.getOrders()) {
+
+                if(orderDetails.getProduct()==null) {
+                    errorMessages.add(messageService.getMessage("purchase.order.product_empty"));
+                    orderDetailsValidation &= false;
+                }
+
+                if(orderDetailsValidation==false) {
+                    ret &= false;
+                    break;
+                }
+            }
+        }
+
+        if(ret==false) {
+            errorMessage.append(errorMessages.get(0));
+        }
+
+        return ret;
     }
 
     /**
@@ -236,13 +280,55 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                 Double unitPrice = orderDetails.getUnitPrice();
                 Double discount = orderDetails.getDiscount();
                 Double qty = orderDetails.getQuantityUOM() * orderDetails.getPurchaseUOMConversion();
-                Double price = (qty * unitPrice);
-                Double discountTotal = price * (discount/100.0);
-                Double subTotal = price + discountTotal;
+                Double priceTotal = (qty * unitPrice);
+                Double discountTotal = priceTotal * (discount/100.0);
+                Double subTotal = priceTotal + discountTotal;
 
                 subTotals += subTotal;
 
                 orderDetails.setQuantity(qty);
+                orderDetails.setTotalPrice(priceTotal);
+                orderDetails.setDiscountTotal(discountTotal);
+                orderDetails.setSubTotal(subTotal);
+                orderDetails.setDate(purchase.getDate());
+            }
+        }
+
+        Double taxPercent = purchase.getTaxPercent();
+        Double taxTotal = subTotals * (taxPercent/100.0);
+        Double freight = purchase.getFreight();
+
+        Double total = subTotals + taxTotal + freight;
+
+        purchase.setSubTotal(subTotals);
+        purchase.setTaxTotal(taxTotal);
+        purchase.setTotal(total);
+    }
+
+    public void calculateQtyAndTotalOfReturn(Purchase purchase, OrderDetails orderDetailsReturn, Double diffUOM) {
+
+        Double subTotals = 0.0;
+
+        if(purchase.getOrders()!=null) {
+            for (OrderDetails orderDetails : purchase.getOrders()) {
+                Double unitPrice = orderDetails.getUnitPrice();
+                Double discount = orderDetails.getDiscount();
+                Double qty = orderDetails.getQuantityUOM() * orderDetails.getPurchaseUOMConversion();
+
+                if(orderDetailsReturn.getId()==orderDetails.getId()){
+                    Double diff = diffUOM * orderDetails.getPurchaseUOMConversion();
+                    qty += diff;
+                }
+
+                Double priceTotal = (qty * unitPrice);
+                Double discountTotal = priceTotal * (discount/100.0);
+                Double subTotal = priceTotal + discountTotal;
+
+                subTotals += subTotal;
+
+                orderDetails.setQuantity(qty);
+                orderDetails.setTotalPrice(priceTotal);
+                orderDetails.setDiscountTotal(discountTotal);
                 orderDetails.setSubTotal(subTotal);
             }
         }
@@ -287,12 +373,14 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     ReceiveDetails receiveDetails = orderDetailsUpdated.getReceiveDetails();
                     if(receiveDetails!=null) {
                         qtyBalanceOnReceiveDelete(receiveDetails,purchase);
-                        deleteReceiveDetails(receiveDetails);
+                        orderDetailsUpdated.setReceiveDetails(null);
+                        entityManager.merge(orderDetailsUpdated);
+                        entityManager.remove(receiveDetails);
                     }
 
                     updated.getOrders().remove(orderDetailsUpdated);
                     qtyBalanceOnDelete(purchase, orderDetailsUpdated);
-                    deleteOrderDetails(orderDetailsUpdated);
+                    entityManager.remove(orderDetailsUpdated);
                 }
             }
         }
@@ -324,19 +412,6 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             }
 
         }
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void deleteReceiveDetails(ReceiveDetails receiveDetails) {
-        OrderDetails orderDetails = entityManager.find(OrderDetails.class, receiveDetails.getId());
-        orderDetails.setReceiveDetails(null);
-        entityManager.merge(orderDetails);
-        entityManager.remove(receiveDetails);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void deleteOrderDetails(OrderDetails orderDetails) {
-        entityManager.remove(orderDetails);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -389,6 +464,37 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         }
 
         entityManager.merge(purchaseUpdated);
+    }
+
+    public void updatePurchaseReturn(ReturnDetails returnDetails,Purchase purchase) throws ServiceException, DatabasePersistenceException {
+
+        Double diff = 0.0;
+        OrderDetails orderDetailsReturn = null;
+
+        if(returnDetails.getId()==null) {
+            entityManager.persist(returnDetails);
+            orderDetailsReturn = entityManager.find(OrderDetails.class, returnDetails.getId());
+
+            diff = -1.0 * returnDetails.getQuantityUOM();
+        }
+        else {
+            entityManager.merge(returnDetails);
+            ReturnDetails existReturnDetails = entityManager.find(ReturnDetails.class, returnDetails.getId());
+
+            diff = -1.0 * ( returnDetails.getQuantityUOM() - existReturnDetails.getQuantityUOM() );
+        }
+
+        purchase = entityManager.find(Purchase.class, purchase.getId());
+
+        calculateQtyAndTotalOfReturn(purchase,orderDetailsReturn,diff);
+        Purchase existingPurchase = entityManager.find(Purchase.class,purchase.getId());
+        CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>( existingPurchase.getOrders() );
+
+        updatePurchase(purchase);
+        Purchase updated = entityManager.find(Purchase.class,purchase.getId());
+
+        qtyBalanceOnUpdate(purchase,updated,existingOrderDetails);
+        accBalanceOnUpdate(purchase);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

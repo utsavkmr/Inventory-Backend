@@ -2,11 +2,14 @@ package kyro.inventory.dao.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kyro.inventory.model.ActiveAuditableEntity;
+import kyro.inventory.model.BaseSearchParameters;
 import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolation;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.lang.reflect.Field;
 
@@ -260,6 +263,12 @@ public class ServiceHelper {
 
     public static String getSearchLikeString(String value){
         return "%" + value + "%";
+    }
+
+    public static void setSearchResponseTotalPage(HttpServletResponse response, BaseSearchParameters criteria) {
+        response.setHeader("access-control-expose-headers", "X-Total-Count,X-Total-Page");
+        response.setHeader("X-Total-Count", String.valueOf(criteria.totalRow));
+        response.setHeader("X-Total-Page", String.valueOf(criteria.totalPage));
     }
 
 

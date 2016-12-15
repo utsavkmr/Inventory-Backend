@@ -46,9 +46,24 @@
         <property name="generateDdl" value="false" />
     </bean>
 
+    <jdbc:initialize-database data-source="dataSource">
+        <jdbc:script location="classpath:kyro/inventory/web/rest-test-data.sql"/>
+    </jdbc:initialize-database>
+
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager"
           c:_0-ref="emf" />
 
     <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+
+    <bean id="messageSource"
+          class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <property name="basename" value="classpath:messages" />
+        <property name="defaultEncoding" value="UTF-8"/>
+    </bean>
+
+    <bean id="localeResolver"
+          class="org.springframework.web.servlet.i18n.SessionLocaleResolver">
+        <property name="defaultLocale" value="en" />
+    </bean>
 
 </beans>

@@ -33,6 +33,9 @@ INSERT INTO address SET postalCode="123", remarks="", street="street", cityId=1,
 INSERT INTO product SET id=1, NAME="test", barcode="123", CODE="123", costPrice=10000, purchaseUOMConversion=1,
 	remarks="", reorderPoint=1, salesPrice=15000, salesStandardPrice=15000, salesUOMConversion=1,
 	TYPE=0, productCategoryId=1, purchaseUOMId=1, salesUOMId=1, standardUOMId=1, isActive=TRUE, createdBy="test", createdDate="2015/01/01";
+INSERT INTO product SET id=2, NAME="test2", barcode="123", CODE="123", costPrice=10000, purchaseUOMConversion=1,
+	remarks="", reorderPoint=1, salesPrice=15000, salesStandardPrice=15000, salesUOMConversion=1,
+	TYPE=0, productCategoryId=1, purchaseUOMId=1, salesUOMId=1, standardUOMId=1, isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 INSERT INTO vendor SET NAME="test", email="test@test.com", fax="123", phone="123",remarks="test", website="test",
 	addressId = 1, isActive=TRUE, createdBy="test", createdDate="2015/01/01";
 

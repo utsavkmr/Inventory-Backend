@@ -46,7 +46,15 @@ public class OrderDetails extends IdentifiableEntity {
 
     @Basic
     @NotNull
+    private Double totalPrice;
+
+    @Basic
+    @NotNull
     private Double discount;
+
+    @Basic
+    @NotNull
+    private Double discountTotal;
 
     @Basic
     @NotNull
@@ -122,12 +130,28 @@ public class OrderDetails extends IdentifiableEntity {
         this.unitPrice = unitPrice;
     }
 
+    public Double getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(Double totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
     public Double getDiscount() {
         return discount;
     }
 
     public void setDiscount(Double discount) {
         this.discount = discount;
+    }
+
+    public Double getDiscountTotal() {
+        return discountTotal;
+    }
+
+    public void setDiscountTotal(Double discountTotal) {
+        this.discountTotal = discountTotal;
     }
 
     public Double getSubTotal() {
