@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.Query;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -104,8 +105,16 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
     @Transactional(propagation = Propagation.REQUIRED)
     public Purchase update(Purchase purchase) throws ServiceException, DatabasePersistenceException {
         calculateQtyAndTotal(purchase);
-        Purchase existingPurchase = entityManager.find(Purchase.class,purchase.getId());
-        CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>( existingPurchase.getOrders() );
+        Purchase existingPurchase = entityManager.find(Purchase.class, purchase.getId());
+        //CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>();
+        List<OrderDetails> existingOrderDetails = new ArrayList<OrderDetails>();
+
+        if(purchase.getOrders()!=null) {
+            for(OrderDetails orderDetails: existingPurchase.getOrders()) {
+                getEntityManager().detach(orderDetails);
+                existingOrderDetails.add(orderDetails);
+            }
+        }
 
         updatePurchase(purchase);
         Purchase updated = entityManager.find(Purchase.class,purchase.getId());
@@ -118,7 +127,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void qtyBalanceOnCreate(Purchase purchase) throws ServiceException, DatabasePersistenceException {
-        Long locationId = null;
+        Long locationId = 0L;
 
         if(purchase.getOrders()!=null && purchase.getOrders().size()>0) {
             for (OrderDetails orderDetails : purchase.getOrders()) {
@@ -162,14 +171,14 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         Double subTotal = purchase.getSubTotal();
         Double freight = purchase.getFreight();
         Long lastTransactionEntityId = purchase.getId();
-        Long lastTransactionChildId = null;
+        Long lastTransactionChildId = 0L;
         TransactionType lastTransactionType = TransactionType.ORDER;
         Date lastTransactionDateTime = purchase.getDate();
 
         try {
 
             AccCheckpoint accCheckPointPayable = updateAccBalance(
-                    null,
+                    0L,
                     total,
                     "2110",
                     lastTransactionEntityId,
@@ -179,7 +188,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             );
 
             AccCheckpoint accCheckPointInventory = updateAccBalance(
-                    null,
+                    0L,
                     subTotal,
                     "1310",
                     lastTransactionEntityId,
@@ -189,7 +198,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             );
 
             AccCheckpoint accCheckPointFreight = updateAccBalance(
-                    null,
+                    0L,
                     freight,
                     "5700",
                     lastTransactionEntityId,
@@ -199,7 +208,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             );
 
             AccCheckpoint accCheckPointTax = updateAccBalance(
-                    null,
+                    0L,
                     freight,
                     "5910",
                     lastTransactionEntityId,
@@ -219,14 +228,14 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         Double subTotal = purchase.getSubTotal();
         Double freight = purchase.getFreight();
         Long lastTransactionEntityId = purchase.getId();
-        Long lastTransactionChildId = null;
+        Long lastTransactionChildId = 0L;
         TransactionType lastTransactionType = TransactionType.ORDER;
         Date lastTransactionDateTime = purchase.getDate();
 
         try {
 
             AccCheckpoint accCheckPointPayable = updateAccBalance(
-                    null,
+                    0L,
                     total,
                     "2110",
                     lastTransactionEntityId,
@@ -236,7 +245,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             );
 
             AccCheckpoint accCheckPointInventory = updateAccBalance(
-                    null,
+                    0L,
                     subTotal,
                     "1310",
                     lastTransactionEntityId,
@@ -246,7 +255,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             );
 
             AccCheckpoint accCheckPointFreight = updateAccBalance(
-                    null,
+                    0L,
                     freight,
                     "5700",
                     lastTransactionEntityId,
@@ -256,7 +265,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             );
 
             AccCheckpoint accCheckPointTax = updateAccBalance(
-                    null,
+                    0L,
                     freight,
                     "5910",
                     lastTransactionEntityId,
@@ -397,6 +406,13 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             Date lastTransactionDateTime = purchase.getDate();
 
             try {
+                OrderDetails orderProductChange =
+                        orderProductChange(orderDetails,existingOrderDetails);
+
+                if(orderProductChange!=null) {
+                    qtyBalanceOnDelete(purchase, orderProductChange);
+                }
+
                 StockCheckpoint stockCheckpointUpdate = updateStockBalance(
                         productId,
                         0L,
@@ -412,6 +428,23 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             }
 
         }
+    }
+
+    public OrderDetails orderProductChange(
+            OrderDetails orderDetails,
+            List<OrderDetails> existingList) {
+
+        if(existingList!=null && existingList.size()>0) {
+            for(OrderDetails existOrder : existingList) {
+                if( orderDetails.getId() == existOrder.getId() ) {
+                    if(orderDetails.getProduct().getId() != existOrder.getProduct().getId()) {
+                        return existOrder;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

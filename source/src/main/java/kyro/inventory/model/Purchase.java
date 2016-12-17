@@ -77,6 +77,9 @@ public class Purchase extends IdentifiableEntity {
     @NotNull
     private Boolean closed;
 
+    @Transient
+    private Boolean receiving;
+
     public Purchase() {}
 
     public String getNo() {
@@ -205,5 +208,13 @@ public class Purchase extends IdentifiableEntity {
 
     public void setClosed(Boolean closed) {
         this.closed = closed;
+    }
+
+    public Boolean getReceiving() {
+        return receiving;
+    }
+
+    public void setReceiving(Boolean receiving) {
+        this.receiving = receiving;
     }
 }
