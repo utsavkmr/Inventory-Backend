@@ -12,22 +12,44 @@ import java.util.Map;
  */
 public class BaseSearchParameters {
 
+    /**
+     * Page
+     */
     public Integer page;
 
+    /**
+     * Limit
+     */
     public Integer limit;
 
+    /**
+     * Sort
+     */
     public String sort;
 
+    /**
+     * Order
+     */
     public SortType order;
 
-    //public Map<String, String> filters = new HashMap<String, String>();
-
+    /**
+     * Total Row
+     */
     public Long totalRow;
 
+    /**
+     * Total Page
+     */
     public Long totalPage;
 
+    /**
+     * Name
+     */
     public String name;
 
+    /**
+     * Empty Constructor
+     */
     public BaseSearchParameters() {
     }
 

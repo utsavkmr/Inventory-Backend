@@ -1,7 +1,10 @@
 package kyro.inventory.model;
 
 /**
- * Created by fahrur on 11/23/2016.
+ * ProductType
+ *
+ * @author fahrur
+ * @version 1.0
  */
 public enum ProductType {
     STOCKED_PRODUCT,

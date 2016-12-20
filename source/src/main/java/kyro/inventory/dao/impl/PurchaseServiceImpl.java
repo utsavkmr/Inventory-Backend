@@ -170,6 +170,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         Double total = purchase.getTotal();
         Double subTotal = purchase.getSubTotal();
         Double freight = purchase.getFreight();
+        Double taxTotal = purchase.getTaxTotal();
         Long lastTransactionEntityId = purchase.getId();
         Long lastTransactionChildId = 0L;
         TransactionType lastTransactionType = TransactionType.ORDER;
@@ -209,7 +210,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
             AccCheckpoint accCheckPointTax = updateAccBalance(
                     0L,
-                    freight,
+                    taxTotal,
                     "5910",
                     lastTransactionEntityId,
                     lastTransactionChildId,
@@ -483,8 +484,15 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         if(receiveDetailsList!=null) {
             for(ReceiveDetails receiveDetails : receiveDetailsList) {
 
+                OrderDetails orderDetails = getEntityManager().find(OrderDetails.class, receiveDetails.getOrderDetails().getId());
+
+                receiveDetails.setPurchaseId(purchase.getId());
+                receiveDetails.setOrderDetails(orderDetails);
+
                 if(receiveDetails.getId()==null) {
                     entityManager.persist(receiveDetails);
+                    orderDetails.setReceiveDetails(receiveDetails);
+                    entityManager.merge(orderDetails);
                     purchaseUpdated.getReceiveDetailsList().add(receiveDetails);
                     qtyBalanceOnReceive(receiveDetails, purchase);
                 }

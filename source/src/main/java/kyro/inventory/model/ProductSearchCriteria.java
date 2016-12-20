@@ -1,9 +1,16 @@
 package kyro.inventory.model;
 
 /**
- * Created by fahrur on 12/2/2016.
+ * Product Search Criteria
+ *
+ * @author fahrur
+ * @version 1.0
  */
 public class ProductSearchCriteria extends BaseSearchParameters {
 
+    /**
+     * product Category Id
+     */
     public Long productCategoryId;
+
 }

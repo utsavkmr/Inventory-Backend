@@ -1,7 +1,10 @@
 package kyro.inventory.model;
 
 /**
- * Created by fahrur on 11/24/2016.
+ * Stock Balance Type
+ *
+ * @author fahrur
+ * @version 1.0
  */
 public enum StockBalanceType {
 
