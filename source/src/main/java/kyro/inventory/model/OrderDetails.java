@@ -7,6 +7,7 @@ import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
@@ -104,6 +105,7 @@ public class OrderDetails extends IdentifiableEntity {
      */
     @Basic
     @NotNull
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
     private Date date;
 
     /**

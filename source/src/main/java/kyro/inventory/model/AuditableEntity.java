@@ -1,5 +1,7 @@
 package kyro.inventory.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.util.Date;
 import javax.persistence.*;
 import javax.validation.constraints.*;
@@ -22,6 +24,7 @@ public abstract class AuditableEntity extends LookupEntity {
      * Created date
      */
     @Basic
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
     private Date createdDate;
 
     /**
@@ -34,6 +37,7 @@ public abstract class AuditableEntity extends LookupEntity {
      * Updated date
      */
     @Basic
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
     private Date updatedDate;
 
     /**

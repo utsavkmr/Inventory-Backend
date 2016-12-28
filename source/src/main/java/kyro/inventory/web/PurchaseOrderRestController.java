@@ -4,14 +4,13 @@ import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
 import kyro.inventory.dao.ProductService;
 import kyro.inventory.dao.PurchaseService;
-import kyro.inventory.model.OrderDetails;
-import kyro.inventory.model.Product;
-import kyro.inventory.model.ProductSearchCriteria;
-import kyro.inventory.model.Purchase;
+import kyro.inventory.dao.impl.ServiceHelper;
+import kyro.inventory.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +29,15 @@ public class PurchaseOrderRestController extends BaseRestController {
      */
     @Autowired
     PurchaseService purchaseService;
+
+    @RequestMapping(value = "/search", method= RequestMethod.POST)
+    public List<Purchase> search(@RequestBody PurchaseSearchCriteria criteria, HttpServletResponse response)
+            throws ServiceException, DatabasePersistenceException
+    {
+        List<Purchase> purchases = purchaseService.search(criteria);
+        ServiceHelper.setSearchResponseTotalPage(response, criteria);
+        return purchases;
+    }
 
 
     /**
@@ -91,6 +99,7 @@ public class PurchaseOrderRestController extends BaseRestController {
 
         return purchase;
     }
+
 
 
 

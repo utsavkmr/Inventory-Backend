@@ -1,5 +1,6 @@
 package kyro.inventory.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
@@ -38,12 +39,14 @@ public class Purchase extends IdentifiableEntity {
      */
     @Basic
     @NotNull
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
     private Date date;
 
     /**
      * Due Date
      */
     @Basic
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
     private Date dueDate;
 
     /**

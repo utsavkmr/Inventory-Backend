@@ -21,7 +21,6 @@
     <mvc:cors>
 
         <mvc:mapping path="/api/**"
-                     allowed-origins="http://localhost:3000"
                      allowed-methods="GET, PUT, POST, DELETE"/>
 
     </mvc:cors>

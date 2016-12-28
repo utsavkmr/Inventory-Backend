@@ -2,10 +2,7 @@ package kyro.inventory.dao;
 
 import kyro.inventory.DatabasePersistenceException;
 import kyro.inventory.ServiceException;
-import kyro.inventory.model.ProductSearchCriteria;
-import kyro.inventory.model.Purchase;
-import kyro.inventory.model.ReceiveDetails;
-import kyro.inventory.model.ReturnDetails;
+import kyro.inventory.model.*;
 
 import java.util.List;
 
@@ -16,6 +13,9 @@ import java.util.List;
  * @version 1.0
  */
 public interface PurchaseService {
+
+    public List<Purchase> search(PurchaseSearchCriteria criteria)
+            throws ServiceException, DatabasePersistenceException;
 
     /**
      * Create Purchase
@@ -53,7 +53,7 @@ public interface PurchaseService {
      */
     public List<Purchase> getAll(Boolean isActive) throws ServiceException, DatabasePersistenceException;
 
-    public void updatePurchaseReceived(List<ReceiveDetails> receiveDetailsList, Purchase purchase) throws ServiceException, DatabasePersistenceException;
+    public void updatePurchaseReceived(List<OrderDetails> orderDetailsList, Purchase purchase) throws ServiceException, DatabasePersistenceException;
 
     public void updatePurchaseReturn(ReturnDetails returnDetails, Purchase purchase) throws ServiceException, DatabasePersistenceException;
 

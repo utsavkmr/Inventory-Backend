@@ -127,10 +127,9 @@ public class PurchaseServiceTest extends BaseTest {
         Purchase purchase = new Purchase();
         purchase.setId(1L);
 
-        List<ReceiveDetails> receiveDetailsList = new ArrayList<ReceiveDetails>();
+        List<OrderDetails> orderDetailsList = new ArrayList<OrderDetails>();
 
         ReceiveDetails receiveDetails = new ReceiveDetails();
-        receiveDetails.setOrderDetails(orderDetails);
         receiveDetails.setProduct(product);
         receiveDetails.setLocation(location);
         receiveDetails.setQuantity(10.0);
@@ -139,9 +138,11 @@ public class PurchaseServiceTest extends BaseTest {
         receiveDetails.setUsePurchaseUOM(true);
         receiveDetails.setReceiveDate(new Date());
 
-        receiveDetailsList.add(receiveDetails);
+        orderDetails.setReceiveDetails(receiveDetails);
 
-        purchaseService.updatePurchaseReceived(receiveDetailsList,purchase);
+        orderDetailsList.add(orderDetails);
+
+        purchaseService.updatePurchaseReceived(orderDetailsList,purchase);
 
     }
 

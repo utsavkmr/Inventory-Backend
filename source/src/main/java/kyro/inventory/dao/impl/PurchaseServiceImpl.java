@@ -6,12 +6,14 @@ import kyro.inventory.dao.PurchaseService;
 import kyro.inventory.model.*;
 import kyro.inventory.dao.impl.ServiceHelper;
 
+import org.aspectj.weaver.ast.Or;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +39,71 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         super(Purchase.class);
     }
 
+    public List<Purchase> search(PurchaseSearchCriteria criteria)
+            throws ServiceException, DatabasePersistenceException {
+
+        Integer page = criteria.page;
+        Integer limit = criteria.limit;
+
+        List<Purchase> purchases = null;
+
+        final String signature = CLASS_NAME + ".search(S criteria)";
+
+        String className = "Purchase";
+
+        try {
+            StringBuffer sb = new StringBuffer("SELECT e FROM ").append(className).append(" e ");
+            StringBuffer sbWhere = new StringBuffer("WHERE (1=1)");
+
+            if(criteria.vendorId !=null ) {
+                sbWhere.append(" AND e.vendor.id = :vendorId");
+            }
+            if(criteria.dateFrom !=null ) {
+                sbWhere.append(" AND e.date >= :dateFrom");
+            }
+            if(criteria.dateTo !=null ) {
+                sbWhere.append(" AND e.date >= :dateTo");
+            }
+
+
+            sb.append(sbWhere);
+
+            // Append ORDER BY clause
+            sb.append(" ORDER BY ").append("id").append(" ").append("asc");
+
+            // Create query
+            TypedQuery<Purchase> query = getEntityManager().createQuery(sb.toString(), Purchase.class);
+
+            if(criteria.vendorId !=null ) {
+                query.setParameter("vendorId", criteria.vendorId);
+            }
+            if(criteria.dateFrom !=null ) {
+                query.setParameter("dateForm", criteria.dateFrom);
+            }
+            if(criteria.dateTo !=null ) {
+                query.setParameter("dateTo", criteria.dateTo);
+            }
+
+            query.setFirstResult((page-1) * limit);
+            query.setMaxResults(limit);
+
+            // Execute the query
+            purchases = query.getResultList();
+
+            String sql = "SELECT COUNT(e) FROM "+className+" e";
+            Query q = getEntityManager().createQuery(sql);
+            Long count = (Long) q.getSingleResult();
+
+            criteria.totalRow = count;
+            criteria.totalPage = getTotalPage(criteria.totalRow, criteria);
+
+        } catch (IllegalStateException e) {
+            throw ServiceHelper.logException(getLogger(), signature, new ServiceException(
+                    "Entity manager is closed when searching entities", e));
+        }
+
+        return purchases;
+    }
 
     public Boolean validateCreate(Purchase purchase,StringBuilder errorMessage) {
         List<String> errorMessages = new ArrayList<String>();
@@ -477,27 +544,28 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
     }
 
-    public void updatePurchaseReceived(List<ReceiveDetails> receiveDetailsList,Purchase purchase) throws ServiceException, DatabasePersistenceException {
+    public void updatePurchaseReceived(List<OrderDetails> orderDetailsList, Purchase purchase) throws ServiceException, DatabasePersistenceException {
 
         Purchase purchaseUpdated = entityManager.find(Purchase.class, purchase.getId());
 
-        if(receiveDetailsList!=null) {
-            for(ReceiveDetails receiveDetails : receiveDetailsList) {
+        if(orderDetailsList!=null) {
+            for(OrderDetails orderDetails : orderDetailsList) {
+                ReceiveDetails receiveDetails = orderDetails.getReceiveDetails();
 
-                OrderDetails orderDetails = getEntityManager().find(OrderDetails.class, receiveDetails.getOrderDetails().getId());
+                OrderDetails orderDetailsUpdate = getEntityManager().find(OrderDetails.class, orderDetails.getId());
+                orderDetailsUpdate.setReceiveDetails(receiveDetails);
 
                 receiveDetails.setPurchaseId(purchase.getId());
-                receiveDetails.setOrderDetails(orderDetails);
 
                 if(receiveDetails.getId()==null) {
                     entityManager.persist(receiveDetails);
-                    orderDetails.setReceiveDetails(receiveDetails);
-                    entityManager.merge(orderDetails);
+                    entityManager.merge(orderDetailsUpdate);
                     purchaseUpdated.getReceiveDetailsList().add(receiveDetails);
                     qtyBalanceOnReceive(receiveDetails, purchase);
                 }
                 else {
                     entityManager.merge(receiveDetails);
+                    entityManager.merge(orderDetailsUpdate);
                     qtyBalanceOnReceiveUpdate(receiveDetails, purchase);
                 }
 

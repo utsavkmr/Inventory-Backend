@@ -1,5 +1,6 @@
 package kyro.inventory.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
@@ -42,12 +43,6 @@ public class ReceiveDetails extends IdentifiableEntity {
     private Location location;
 
     /**
-     * Order Details
-     */
-    @OneToOne(mappedBy="receiveDetails")
-    private OrderDetails orderDetails;
-
-    /**
      * Quantity UOM
      */
     @Basic
@@ -80,6 +75,7 @@ public class ReceiveDetails extends IdentifiableEntity {
      */
     @Basic
     @NotNull
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
     private Date receiveDate;
 
     /**
@@ -133,22 +129,6 @@ public class ReceiveDetails extends IdentifiableEntity {
      */
     public void setLocation(Location location) {
         this.location = location;
-    }
-
-    /**
-     * Get the order details
-     * @return the order details
-     */
-    public OrderDetails getOrderDetails() {
-        return orderDetails;
-    }
-
-    /**
-     * Set the order details
-     * @param orderDetails the order details
-     */
-    public void setOrderDetails(OrderDetails orderDetails) {
-        this.orderDetails = orderDetails;
     }
 
     /**
