@@ -478,9 +478,20 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                         orderProductChange(orderDetails,existingOrderDetails);
 
                 if(orderProductChange!=null) {
+
+                    if (orderProductChange.getReceiveDetails() != null) {
+                        ReceiveDetails receiveDetails = entityManager.find(
+                                ReceiveDetails.class, orderProductChange.getReceiveDetails().getId());
+                        qtyBalanceOnReceiveDelete(receiveDetails, purchase);
+                        orderDetails.setReceiveDetails(null);
+                        entityManager.merge(orderDetails);
+                        entityManager.remove(receiveDetails);
+                    }
+
                     qtyBalanceOnDelete(purchase, orderProductChange);
                 }
 
+                amount = orderDetails.getQuantity();
                 StockCheckpoint stockCheckpointUpdate = updateStockBalance(
                         productId,
                         0L,

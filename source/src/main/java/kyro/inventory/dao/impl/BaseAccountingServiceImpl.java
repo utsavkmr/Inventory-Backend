@@ -415,6 +415,7 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
                 lastTransactionType, lastTransactionDateTime, false, 0L);
 
         StockCheckpoint existedStockCheckpoint = getStockCheckPoint(stockCheckpoint);
+        amount = existedStockCheckpoint.getAmount();
         if(existedStockCheckpoint==null) {
             throw new ServiceException("Stock checkpoint not exist");
         }
