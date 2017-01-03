@@ -390,6 +390,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             for (OrderDetails orderDetails : purchase.getOrders()) {
                 Double unitPrice = orderDetails.getUnitPrice();
                 Double discount = orderDetails.getDiscount();
+                Double qtyUOM = orderDetails.getQuantityUOM() + diffUOM;
                 Double qty = orderDetails.getQuantityUOM() * orderDetails.getPurchaseUOMConversion();
 
                 if(orderDetailsReturn.getId()==orderDetails.getId()){
@@ -403,6 +404,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
 
                 subTotals += subTotal;
 
+                orderDetails.setQuantityUOM(qtyUOM);
                 orderDetails.setQuantity(qty);
                 orderDetails.setTotalPrice(priceTotal);
                 orderDetails.setDiscountTotal(discountTotal);
@@ -474,8 +476,8 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             Date lastTransactionDateTime = purchase.getDate();
 
             try {
-                OrderDetails orderProductChange =
-                        orderProductChange(orderDetails,existingOrderDetails);
+                OrderDetails orderProductChange = orderProductChange(orderDetails,existingOrderDetails);
+                OrderDetails orderMeasurementChange = orderMeasurementChange(orderDetails,existingOrderDetails);
 
                 if(orderProductChange!=null) {
 
@@ -488,7 +490,38 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                         entityManager.remove(receiveDetails);
                     }
 
+                    if(orderProductChange.getReturnDetails() != null) {
+                        ReturnDetails returnDetails = entityManager.find(
+                                ReturnDetails.class, orderProductChange.getReturnDetails().getId());
+
+                        qtyBalanceOnReturnDelete(returnDetails, purchase);
+                        orderDetails.setReturnDetails(null);
+                        entityManager.merge(orderDetails);
+                        entityManager.remove(returnDetails);
+                    }
+
                     qtyBalanceOnDelete(purchase, orderProductChange);
+                }
+                else if(orderMeasurementChange!=null) {
+
+                    if (orderMeasurementChange.getReceiveDetails() != null) {
+                        ReceiveDetails receiveDetails = entityManager.find(
+                                ReceiveDetails.class, orderMeasurementChange.getReceiveDetails().getId());
+                        qtyBalanceOnReceiveDelete(receiveDetails, purchase);
+                        orderDetails.setReceiveDetails(null);
+                        entityManager.merge(orderDetails);
+                        entityManager.remove(receiveDetails);
+                    }
+
+                    if(orderMeasurementChange.getReturnDetails() != null) {
+                        ReturnDetails returnDetails = entityManager.find(
+                                ReturnDetails.class, orderMeasurementChange.getReturnDetails().getId());
+
+                        qtyBalanceOnReturnDelete(returnDetails, purchase);
+                        orderDetails.setReturnDetails(null);
+                        entityManager.merge(orderDetails);
+                        entityManager.remove(returnDetails);
+                    }
                 }
 
                 amount = orderDetails.getQuantity();
@@ -517,6 +550,23 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
             for(OrderDetails existOrder : existingList) {
                 if( orderDetails.getId() == existOrder.getId() ) {
                     if(orderDetails.getProduct().getId() != existOrder.getProduct().getId()) {
+                        return existOrder;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public OrderDetails orderMeasurementChange(
+            OrderDetails orderDetails,
+            List<OrderDetails> existingList) {
+
+        if(existingList!=null && existingList.size()>0) {
+            for(OrderDetails existOrder : existingList) {
+                if( orderDetails.getId() == existOrder.getId() ) {
+                    if(orderDetails.getUsePurchaseUOM() != existOrder.getUsePurchaseUOM()) {
                         return existOrder;
                     }
                 }
@@ -586,35 +636,57 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         entityManager.merge(purchaseUpdated);
     }
 
-    public void updatePurchaseReturn(ReturnDetails returnDetails,Purchase purchase) throws ServiceException, DatabasePersistenceException {
+    public void updatePurchaseReturn(List<OrderDetails> orderDetailsList,Purchase purchase) throws ServiceException, DatabasePersistenceException {
 
-        Double diff = 0.0;
-        OrderDetails orderDetailsReturn = null;
+        if(orderDetailsList!=null) {
+            for(OrderDetails orderDetails : orderDetailsList) {
 
-        if(returnDetails.getId()==null) {
-            entityManager.persist(returnDetails);
-            orderDetailsReturn = entityManager.find(OrderDetails.class, returnDetails.getId());
+                ReturnDetails returnDetails = orderDetails.getReturnDetails();
+                Double diff = 0.0;
+                OrderDetails orderDetailsUpdate =  entityManager.find(OrderDetails.class, orderDetails.getId());
+                orderDetailsUpdate.setReturnDetails(returnDetails);
 
-            diff = -1.0 * returnDetails.getQuantityUOM();
+                if (returnDetails.getId() == null) {
+                    entityManager.persist(returnDetails);
+                    entityManager.merge(orderDetailsUpdate);
+
+                    diff = -1.0 * returnDetails.getQuantityUOM();
+                } else {
+                    ReturnDetails existReturnDetails = entityManager.find(ReturnDetails.class, returnDetails.getId());
+                    diff = -1.0 * (returnDetails.getQuantityUOM() - existReturnDetails.getQuantityUOM());
+
+                    entityManager.merge(returnDetails);
+                    entityManager.merge(orderDetailsUpdate);
+                }
+
+                purchase = entityManager.find(Purchase.class, purchase.getId());
+
+                calculateQtyAndTotalOfReturn(purchase, orderDetailsUpdate, diff);
+                Purchase existingPurchase = entityManager.find(Purchase.class, purchase.getId());
+                CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>(existingPurchase.getOrders());
+
+                updatePurchase(purchase);
+                Purchase updated = entityManager.find(Purchase.class, purchase.getId());
+
+                try{
+                    StockCheckpoint stockCheckpointReturn = updateStockBalance(
+                            orderDetails.getProduct().getId(),
+                            0L,
+                            returnDetails.getQuantity(),
+                            StockBalanceType.RETURN,
+                            purchase.getId(),
+                            returnDetails.getId(),
+                            TransactionType.RETURN,
+                            returnDetails.getReturnDate()
+                    );
+                } catch (SQLException e) {
+                    throw new ServiceException("Can't create stock account",e);
+                }
+
+                qtyBalanceOnUpdate(purchase, updated, existingOrderDetails);
+                accBalanceOnUpdate(purchase);
+            }
         }
-        else {
-            entityManager.merge(returnDetails);
-            ReturnDetails existReturnDetails = entityManager.find(ReturnDetails.class, returnDetails.getId());
-
-            diff = -1.0 * ( returnDetails.getQuantityUOM() - existReturnDetails.getQuantityUOM() );
-        }
-
-        purchase = entityManager.find(Purchase.class, purchase.getId());
-
-        calculateQtyAndTotalOfReturn(purchase,orderDetailsReturn,diff);
-        Purchase existingPurchase = entityManager.find(Purchase.class,purchase.getId());
-        CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>( existingPurchase.getOrders() );
-
-        updatePurchase(purchase);
-        Purchase updated = entityManager.find(Purchase.class,purchase.getId());
-
-        qtyBalanceOnUpdate(purchase,updated,existingOrderDetails);
-        accBalanceOnUpdate(purchase);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -770,6 +842,33 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     lastTransactionEntityId,
                     lastTransactionChildId,
                     TransactionType.RECEIVE,
+                    lastTransactionDateTime
+            );
+
+        } catch (SQLException e) {
+            throw new ServiceException("Can't create stock account",e);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void qtyBalanceOnReturnDelete(ReturnDetails returnDetails, Purchase purchase) throws ServiceException, DatabasePersistenceException {
+        //Delete
+        Long productId = returnDetails.getProduct().getId();
+        double amount = returnDetails.getQuantity();
+        Long lastTransactionEntityId = purchase.getId();
+        Long lastTransactionChildId = returnDetails.getId();
+        Date lastTransactionDateTime = purchase.getDate();
+
+        try {
+
+            deleteStockCheckpoint(
+                    productId,
+                    0L,
+                    amount,
+                    StockBalanceType.RETURN,
+                    lastTransactionEntityId,
+                    lastTransactionChildId,
+                    TransactionType.RETURN,
                     lastTransactionDateTime
             );
 

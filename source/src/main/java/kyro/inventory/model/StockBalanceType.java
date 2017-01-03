@@ -9,7 +9,8 @@ package kyro.inventory.model;
 public enum StockBalanceType {
 
     ON_ORDER("ON_ORDER"),
-    RECEIVE("RECEIVE");
+    RECEIVE("RECEIVE"),
+    RETURN("RETURN");
 
     private final String text;
 

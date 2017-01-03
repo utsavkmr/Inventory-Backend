@@ -55,7 +55,7 @@ public interface PurchaseService {
 
     public void updatePurchaseReceived(List<OrderDetails> orderDetailsList, Purchase purchase) throws ServiceException, DatabasePersistenceException;
 
-    public void updatePurchaseReturn(ReturnDetails returnDetails, Purchase purchase) throws ServiceException, DatabasePersistenceException;
+    public void updatePurchaseReturn(List<OrderDetails> returnDetailsList, Purchase purchase) throws ServiceException, DatabasePersistenceException;
 
     public Boolean validateCreate(Purchase purchase,StringBuilder errorMessages);
 }

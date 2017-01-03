@@ -1,7 +1,10 @@
 package kyro.inventory.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 
 /**
  * Return Details
@@ -54,6 +57,11 @@ public class ReturnDetails extends IdentifiableEntity {
     @Basic
     @NotNull
     private Double purchaseUOMConversion;
+
+    @Basic
+    @NotNull
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss")
+    private Date returnDate;
 
     /**
      * Return Details
@@ -154,5 +162,13 @@ public class ReturnDetails extends IdentifiableEntity {
      */
     public void setPurchaseUOMConversion(Double purchaseUOMConversion) {
         this.purchaseUOMConversion = purchaseUOMConversion;
+    }
+
+    public Date getReturnDate() {
+        return returnDate;
+    }
+
+    public void setReturnDate(Date returnDate) {
+        this.returnDate = returnDate;
     }
 }

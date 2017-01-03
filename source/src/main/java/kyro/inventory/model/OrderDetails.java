@@ -111,7 +111,7 @@ public class OrderDetails extends IdentifiableEntity {
     /**
      * Return details
      */
-    @ManyToOne(fetch= FetchType.EAGER)
+    @ManyToOne(fetch= FetchType.EAGER, cascade = {CascadeType.ALL})
     @JoinColumn(name="returnDetailsId")
     private ReturnDetails returnDetails;
 
