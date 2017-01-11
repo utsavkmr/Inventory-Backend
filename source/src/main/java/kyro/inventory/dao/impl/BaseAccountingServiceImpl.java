@@ -133,11 +133,11 @@ public abstract class BaseAccountingServiceImpl<T extends IdentifiableEntity> ex
         Long lastTransactionEntityId = receiveDetails.getPurchaseId();
         Long lastTransactionChildId = receiveDetails.getId();
         TransactionType lastTransactionType = TransactionType.RECEIVE;
-        StockBalanceType balType = StockBalanceType.RECEIVE;
+        StockBalanceType balType = StockBalanceType.ON_HAND;
 
         StockCheckpoint stockCheckpoint = null;
 
-        StockAccount stockAccount = getStockAccount(new StockAccount(null,productId,locationId,StockBalanceType.RECEIVE));
+        StockAccount stockAccount = getStockAccount(new StockAccount(null,productId,locationId,StockBalanceType.ON_HAND));
 
         TypedQuery<StockCheckpoint> q = getEntityManager().createQuery(QUERY_GET_STOCK_CHECKPOINT_BY_CHILD_ID,
                 StockCheckpoint.class);

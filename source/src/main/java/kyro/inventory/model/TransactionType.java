@@ -10,7 +10,8 @@ public enum TransactionType {
 
     ORDER("ORDER"),
     RECEIVE("RECEIVE"),
-    RETURN("RETURN");
+    RETURN("RETURN"),
+    SALES("SALES");
 
     private final String text;
 

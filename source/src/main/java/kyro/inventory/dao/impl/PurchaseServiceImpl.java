@@ -176,11 +176,9 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
         //CopyOnWriteArrayList<OrderDetails> existingOrderDetails = new CopyOnWriteArrayList<OrderDetails>();
         List<OrderDetails> existingOrderDetails = new ArrayList<OrderDetails>();
 
-        if(purchase.getOrders()!=null) {
-            for(OrderDetails orderDetails: existingPurchase.getOrders()) {
-                getEntityManager().detach(orderDetails);
-                existingOrderDetails.add(orderDetails);
-            }
+        for(OrderDetails orderDetails: existingPurchase.getOrders()) {
+            getEntityManager().detach(orderDetails);
+            existingOrderDetails.add(orderDetails);
         }
 
         updatePurchase(purchase);
@@ -449,17 +447,29 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     // TODO :
                     // Check if exist receive details & return details that quantity > 0
                     //
-                    ReceiveDetails receiveDetails = orderDetailsUpdated.getReceiveDetails();
-                    if(receiveDetails!=null) {
+                    if(orderDetailsUpdated.getReceiveDetails()!=null) {
+                        ReceiveDetails receiveDetails = entityManager.find(
+                                ReceiveDetails.class, orderDetailsUpdated.getReceiveDetails().getId());
                         qtyBalanceOnReceiveDelete(receiveDetails,purchase);
                         orderDetailsUpdated.setReceiveDetails(null);
                         entityManager.merge(orderDetailsUpdated);
                         entityManager.remove(receiveDetails);
                     }
 
-                    updated.getOrders().remove(orderDetailsUpdated);
+                    if(orderDetailsUpdated.getReturnDetails()!=null) {
+                        ReturnDetails returnDetails = entityManager.find(
+                                ReturnDetails.class, orderDetailsUpdated.getReturnDetails().getId());
+                        qtyBalanceOnReturnDelete(returnDetails, purchase);
+                        orderDetailsUpdated.setReturnDetails(null);
+                        entityManager.merge(orderDetailsUpdated);
+                        entityManager.remove(returnDetails);
+                    }
+
+                    OrderDetails orderDetailsDelete = entityManager.find(
+                            OrderDetails.class, orderDetailsUpdated.getId());
+                    updated.getOrders().remove(orderDetailsDelete);
                     qtyBalanceOnDelete(purchase, orderDetailsUpdated);
-                    entityManager.remove(orderDetailsUpdated);
+                    entityManager.remove(orderDetailsDelete);
                 }
             }
         }
@@ -705,7 +715,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     productId,
                     locationId,
                     amount,
-                    StockBalanceType.RECEIVE,
+                    StockBalanceType.ON_HAND,
                     lastTransactionEntityId,
                     lastTransactionChildId,
                     TransactionType.RECEIVE,
@@ -749,7 +759,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                         productId,
                         locationId,
                         amount,
-                        StockBalanceType.RECEIVE,
+                        StockBalanceType.ON_HAND,
                         lastTransactionEntityId,
                         lastTransactionChildId,
                         TransactionType.RECEIVE,
@@ -774,7 +784,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                         productId,
                         location.getId(),
                         amount,
-                        StockBalanceType.RECEIVE,
+                        StockBalanceType.ON_HAND,
                         lastTransactionEntityId,
                         lastTransactionChildId,
                         TransactionType.RECEIVE,
@@ -785,7 +795,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                         productId,
                         locationId,
                         amount,
-                        StockBalanceType.RECEIVE,
+                        StockBalanceType.ON_HAND,
                         lastTransactionEntityId,
                         lastTransactionChildId,
                         TransactionType.RECEIVE,
@@ -827,7 +837,7 @@ public class PurchaseServiceImpl extends BaseAccountingServiceImpl<Purchase>
                     productId,
                     location.getId(),
                     amount,
-                    StockBalanceType.RECEIVE,
+                    StockBalanceType.ON_HAND,
                     lastTransactionEntityId,
                     lastTransactionChildId,
                     TransactionType.RECEIVE,
